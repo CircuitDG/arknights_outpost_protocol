@@ -131,7 +131,7 @@ OutpostProtocol/
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/你的用户名/OutpostProtocol.git
+git clone https://github.com/yuanshi233/arknights_outpost_protocol.git
 cd OutpostProtocol
 
 # 2. 用 Godot 打开项目
@@ -210,8 +210,8 @@ cd OutpostProtocol
 
 | 渠道 | 链接 |
 |:---|:---|
-| GitHub Issues | [提交 Issue](https://github.com/你的用户名/OutpostProtocol/issues) |
-| 项目看板 | [GitHub Projects](https://github.com/你的用户名/OutpostProtocol/projects) |
+| GitHub Issues | [提交 Issue](https://github.com/yuanshi233/arknights_outpost_protocol/issues) |
+| 项目看板 | [GitHub Projects](https://github.com/yuanshi233/arknights_outpost_protocol/projects) |
 
 ---
 
