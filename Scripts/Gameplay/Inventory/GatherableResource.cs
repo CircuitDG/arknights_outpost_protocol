@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Managers;
+using OutpostProtocol.UI.Controllers;
 
 namespace OutpostProtocol.Gameplay.Inventory;
 
@@ -114,18 +115,20 @@ public partial class GatherableResource : Node2D
             return false;
         }
 
-        if (!backpack.AddItem(ItemId, AmountPerGather))
+        int gatherAmount = AmountPerGather + TalentTreeController.GatherAmountBonus;
+
+        if (!backpack.AddItem(ItemId, gatherAmount))
         {
             GD.Print("[GatherableResource] 背包已满");
             return false;
         }
 
-        _remaining = Mathf.Max(0, _remaining - AmountPerGather);
+        _remaining = Mathf.Max(0, _remaining - gatherAmount);
 
         string itemName = DataManager.Instance.GetItem(ItemId)?.Name ?? $"物品{ItemId}";
-        GD.Print($"[GatherableResource] 采集到 {AmountPerGather} 个 {itemName}（剩余 {_remaining}）");
-        EventBus.Instance.EmitLogMessage($"采集到 {AmountPerGather} 个 {itemName}", "INFO");
-        EventBus.Instance.EmitResourceGathered(ItemId, AmountPerGather);
+        GD.Print($"[GatherableResource] 采集到 {gatherAmount} 个 {itemName}（剩余 {_remaining}）");
+        EventBus.Instance.EmitLogMessage($"采集到 {gatherAmount} 个 {itemName}", "INFO");
+        EventBus.Instance.EmitResourceGathered(ItemId, gatherAmount);
 
         UpdateVisuals();
 

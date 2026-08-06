@@ -4,6 +4,7 @@ using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Entity.Components;
 using OutpostProtocol.Managers;
+using OutpostProtocol.UI.Controllers;
 using System;
 using System.Collections.Generic;
 
@@ -124,10 +125,18 @@ public partial class Operator : BaseEntity
             return;
         }
 
+        // 天赋：初始等级加成
+        _currentLevel = Math.Min(1 + TalentTreeController.OperatorStartLevelBonus, _data.MaxLevel);
+
         EntityName = _data.Name;
         EntityId = _data.Id;
 
         ApplyStats();
+        // 天赋：攻速加成（场景默认 1.0 为基础）
+        if (Attack != null)
+        {
+            Attack.AttackInterval = 1.0f / (1f + TalentTreeController.OperatorAttackSpeedBonus);
+        }
         GD.Print($"[{EntityName}] 初始化完成 — Lv.{_currentLevel}, HP:{Health?.CurrentHealth}/{Health?.MaxHealth}");
     }
 
@@ -228,8 +237,10 @@ public partial class Operator : BaseEntity
     {
         if (_data == null || _currentLevel >= _data.MaxLevel) return;
 
-        _currentExp += amount;
-        EventBus.Instance.EmitOperatorExpGained(OperatorDataId, amount);
+        // 天赋：经验加成
+        int gained = (int)(amount * (1f + TalentTreeController.OperatorExpBonus));
+        _currentExp += gained;
+        EventBus.Instance.EmitOperatorExpGained(OperatorDataId, gained);
 
         // 检查升级
         while (_currentLevel < _data.MaxLevel)

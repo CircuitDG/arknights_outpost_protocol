@@ -283,7 +283,7 @@ public partial class GameManager : Node
 
         if (_outpostCore.IsDestroyed) return;
 
-        int repairAmount = (int)(_outpostCore.MaxHealth * RepairPercentPerRest);
+        int repairAmount = (int)(_outpostCore.MaxHealth * RepairPercentPerRest * (1f + TalentTreeController.CoreRepairBonus));
         int actualRepair = _outpostCore.Repair(repairAmount);
         if (actualRepair > 0)
         {

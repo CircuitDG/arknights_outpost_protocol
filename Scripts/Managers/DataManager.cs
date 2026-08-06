@@ -33,6 +33,7 @@ public partial class DataManager : Node
     private readonly Dictionary<int, EnemyWaveData> _waveDict = new();
     private readonly Dictionary<int, ItemData> _itemDict = new();
     private readonly Dictionary<string, SkillData> _skillDict = new();
+    private readonly Dictionary<string, TalentData> _talentDict = new();
 
     // ============================================================
     // 公共访问属性
@@ -44,6 +45,7 @@ public partial class DataManager : Node
     public IReadOnlyDictionary<int, EnemyWaveData> Waves => _waveDict;
     public IReadOnlyDictionary<int, ItemData> Items => _itemDict;
     public IReadOnlyDictionary<string, SkillData> Skills => _skillDict;
+    public IReadOnlyDictionary<string, TalentData> Talents => _talentDict;
 
     // ============================================================
     // 加载状态
@@ -113,12 +115,16 @@ public partial class DataManager : Node
             {
                 foreach (var item in items) _skillDict[item.Id] = item;
             }),
+            LoadDataAsync<TalentData>("res://Data/TalentData.json", items =>
+            {
+                foreach (var item in items) _talentDict[item.Id] = item;
+            }),
         };
 
         await Task.WhenAll(tasks);
 
         _isLoaded = true;
-        GD.Print($"[DataManager] 加载完成 — 干员:{_operatorDict.Count}, 藏品:{_collectionDict.Count}, 塔:{_towerDict.Count}, 波次:{_waveDict.Count}, 物品:{_itemDict.Count}, 技能:{_skillDict.Count}");
+        GD.Print($"[DataManager] 加载完成 — 干员:{_operatorDict.Count}, 藏品:{_collectionDict.Count}, 塔:{_towerDict.Count}, 波次:{_waveDict.Count}, 物品:{_itemDict.Count}, 技能:{_skillDict.Count}, 天赋:{_talentDict.Count}");
 
         // 广播加载完成
         EventBus.Instance.EmitLogMessage("DataManager 加载完成", "INFO");
@@ -205,6 +211,12 @@ public partial class DataManager : Node
     public SkillData GetSkill(string id)
     {
         return _skillDict.GetValueOrDefault(id);
+    }
+
+    /// <summary>获取天赋数据</summary>
+    public TalentData GetTalent(string id)
+    {
+        return _talentDict.GetValueOrDefault(id);
     }
 
     /// <summary>按波次编号获取波次数据</summary>

@@ -3,6 +3,8 @@ using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Core.Grid;
 using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
+using OutpostProtocol.UI.Controllers;
+using System;
 
 namespace OutpostProtocol.Gameplay.Building;
 
@@ -236,9 +238,9 @@ public partial class TowerBuilder : Node
     {
         if (Backpack == null) return true;
 
-        int wood = GetBuildCost(BuildWoodCosts);
-        int iron = GetBuildCost(BuildIronCosts);
-        int originium = GetBuildCost(BuildOriginiumCosts);
+        int wood = GetDiscountedCost(GetBuildCost(BuildWoodCosts));
+        int iron = GetDiscountedCost(GetBuildCost(BuildIronCosts));
+        int originium = GetDiscountedCost(GetBuildCost(BuildOriginiumCosts));
 
         return Backpack.GetCount(Backpack.WOOD_ITEM_ID) >= wood &&
                Backpack.GetCount(Backpack.IRON_ITEM_ID) >= iron &&
@@ -249,9 +251,9 @@ public partial class TowerBuilder : Node
     {
         if (Backpack == null) return;
 
-        int wood = GetBuildCost(BuildWoodCosts);
-        int iron = GetBuildCost(BuildIronCosts);
-        int originium = GetBuildCost(BuildOriginiumCosts);
+        int wood = GetDiscountedCost(GetBuildCost(BuildWoodCosts));
+        int iron = GetDiscountedCost(GetBuildCost(BuildIronCosts));
+        int originium = GetDiscountedCost(GetBuildCost(BuildOriginiumCosts));
 
         Backpack.TrySpend(wood, iron, originium);
         GD.Print($"[TowerBuilder] 消耗资源: 木材{wood}, 铁{iron}, 源石{originium}");
@@ -261,6 +263,12 @@ public partial class TowerBuilder : Node
     {
         if (costs == null || _selectedTowerIndex < 0 || _selectedTowerIndex >= costs.Length) return 0;
         return costs[_selectedTowerIndex];
+    }
+
+    private static int GetDiscountedCost(int raw)
+    {
+        float reduction = TalentTreeController.TowerBuildCostReduction;
+        return reduction > 0 ? (int)Math.Ceiling(raw * (1f - reduction)) : raw;
     }
 
     // ============================================================

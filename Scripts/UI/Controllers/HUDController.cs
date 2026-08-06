@@ -176,6 +176,13 @@ public partial class HUDController : Node
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        // T 键打开天赋树
+        if (@event is InputEventKey keyEvt && keyEvt.Pressed && keyEvt.Keycode == Key.T)
+        {
+            GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
+            return;
+        }
+
         // 建设期快捷键：1/2/3 选择塔，ESC 取消
         if (GameManager.Instance?.CurrentState != GameState.Build || _towerBuilder == null) return;
 

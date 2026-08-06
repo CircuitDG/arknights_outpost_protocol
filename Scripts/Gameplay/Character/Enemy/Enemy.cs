@@ -4,6 +4,7 @@ using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Entity.Components;
 using OutpostProtocol.Gameplay.Inventory;
+using OutpostProtocol.UI.Controllers;
 
 namespace OutpostProtocol.Gameplay.Character.Enemy;
 
@@ -268,7 +269,8 @@ public partial class Enemy : BaseEntity
         loot.GlobalPosition = GlobalPosition;
         GetTree().CurrentScene.AddChild(loot);
         loot.GlobalPosition = GlobalPosition;
-        loot.SetLoot(ResourceItemId > 0 ? ResourceItemId : 1, ResourceReward > 0 ? ResourceReward : 1);
+        int quantity = (int)((ResourceReward > 0 ? ResourceReward : 1) * (1f + TalentTreeController.LootDropRateBonus));
+        loot.SetLoot(ResourceItemId > 0 ? ResourceItemId : 1, quantity);
 
         GD.Print($"[{EntityName}] 掉落 {loot.Data?.Name ?? "物品"} x{ResourceReward}");
     }

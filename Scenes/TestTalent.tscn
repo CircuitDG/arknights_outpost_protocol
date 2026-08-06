@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="1_doctor"]
+[ext_resource type="PackedScene" path="res://Scenes/World/GatherableResource.tscn" id="2_resource"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/TalentTree.tscn" id="3_talent"]
+[ext_resource type="Script" path="res://Scripts/TestTalentController.cs" id="4_controller"]
+
+[node name="TestTalent" type="Node2D"]
+
+[node name="Doctor" parent="." instance=ExtResource("1_doctor")]
+position = Vector2(100, 100)
+
+[node name="Gatherable_1" parent="." instance=ExtResource("2_resource")]
+position = Vector2(80, 100)
+ItemId = 1
+AmountPerGather = 1
+MaxAmount = 5
+
+[node name="TalentTree" parent="." instance=ExtResource("3_talent")]
+
+[node name="TestTalentController" type="Node" parent="."]
+script = ExtResource("4_controller")

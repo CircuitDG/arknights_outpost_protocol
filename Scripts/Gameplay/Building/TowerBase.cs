@@ -4,6 +4,7 @@ using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
+using OutpostProtocol.UI.Controllers;
 using System;
 using System.Collections.Generic;
 
@@ -243,7 +244,11 @@ public partial class TowerBase : Node2D
         }
 
         // 消耗资源（未接线 Backpack 时允许升级）
-        if (Backpack != null && !Backpack.TrySpend(info.WoodCost, info.IronCost, info.OriginiumCost))
+        int woodCost = GetDiscountedCost(info.WoodCost);
+        int ironCost = GetDiscountedCost(info.IronCost);
+        int originiumCost = GetDiscountedCost(info.OriginiumCost);
+
+        if (Backpack != null && !Backpack.TrySpend(woodCost, ironCost, originiumCost))
         {
             GD.Print($"[{Name}] 资源不足，无法升级到 Lv.{CurrentLevel + 1}");
             return false;
@@ -257,6 +262,12 @@ public partial class TowerBase : Node2D
         EventBus.Instance.EmitLogMessage($"{Name} 升级到 Lv.{CurrentLevel}", "INFO");
         EventBus.Instance.EmitTowerUpgraded(TowerDataId, CurrentLevel);
         return true;
+    }
+
+    private static int GetDiscountedCost(int raw)
+    {
+        float reduction = TalentTreeController.TowerUpgradeCostReduction;
+        return reduction > 0 ? (int)Math.Ceiling(raw * (1f - reduction)) : raw;
     }
 
     // ============================================================
