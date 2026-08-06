@@ -17,15 +17,15 @@ public partial class SettingsManager : Node
 
     private const string SETTINGS_PATH = "user://settings.json";
 
-    /// <summary>默认主键位（physical keycode）</summary>
-    public static readonly Dictionary<string, int> DefaultKeys = new()
+    /// <summary>默认键位（每个动作支持多键，physical keycode）</summary>
+    public static readonly Dictionary<string, List<int>> DefaultKeys = new()
     {
-        ["move_up"] = 87, // W
-        ["move_down"] = 83, // S
-        ["move_left"] = 65, // A
-        ["move_right"] = 68, // D
-        ["sprint"] = 4194325, // Shift
-        ["interact"] = 69, // E
+        ["move_up"] = new List<int> { 87, 4194320 }, // W, ↑
+        ["move_down"] = new List<int> { 83, 4194322 }, // S, ↓
+        ["move_left"] = new List<int> { 65, 4194319 }, // A, ←
+        ["move_right"] = new List<int> { 68, 4194321 }, // D, →
+        ["sprint"] = new List<int> { 4194325 }, // Shift
+        ["interact"] = new List<int> { 69 }, // E
     };
 
     private static readonly string[] VolumeBuses = { "Master", "Music", "SFX" };
@@ -42,7 +42,7 @@ public partial class SettingsManager : Node
     public class GameSettings
     {
         public Dictionary<string, float> Volumes { get; set; } = new();
-        public Dictionary<string, int> KeyBindings { get; set; } = new();
+        public Dictionary<string, List<int>> KeyBindings { get; set; } = new();
     }
 
     public override void _Ready()
@@ -107,29 +107,58 @@ public partial class SettingsManager : Node
     // 键位
     // ============================================================
 
-    public int GetActionKey(string action)
+    /// <summary>获取动作的全部键位（physical keycode 列表）</summary>
+    public List<int> GetActionKeys(string action)
     {
-        return _settings.KeyBindings.GetValueOrDefault(action, DefaultKeys.GetValueOrDefault(action, 0));
+        if (_settings.KeyBindings.TryGetValue(action, out var keys) && keys.Count > 0)
+        {
+            return new List<int>(keys);
+        }
+        return new List<int>(DefaultKeys.GetValueOrDefault(action, new List<int>()));
     }
 
+    /// <summary>获取动作的第一个键位（兼容旧调用）</summary>
+    public int GetActionKey(string action)
+    {
+        var keys = GetActionKeys(action);
+        return keys.Count > 0 ? keys[0] : 0;
+    }
+
+    /// <summary>为动作追加一个键位（多键支持）</summary>
     public void RebindAction(string action, int physicalKeycode)
     {
-        _settings.KeyBindings[action] = physicalKeycode;
-        ApplyBinding(action, physicalKeycode);
+        var keys = GetActionKeys(action);
+        if (!keys.Contains(physicalKeycode))
+        {
+            keys.Add(physicalKeycode);
+        }
+        _settings.KeyBindings[action] = keys;
+        ApplyBinding(action, keys);
         Save();
     }
 
-    private static void ApplyBinding(string action, int physicalKeycode)
+    /// <summary>清空动作的全部键位</summary>
+    public void ClearActionKeys(string action)
+    {
+        _settings.KeyBindings[action] = new List<int>();
+        ApplyBinding(action, new List<int>());
+        Save();
+    }
+
+    private static void ApplyBinding(string action, IEnumerable<int> keycodes)
     {
         if (!InputMap.HasAction(action)) return;
 
         InputMap.ActionEraseEvents(action);
-        var keyEvent = new InputEventKey
+        foreach (int keycode in keycodes)
         {
-            PhysicalKeycode = (Key)physicalKeycode,
-            Keycode = (Key)physicalKeycode,
-        };
-        InputMap.ActionAddEvent(action, keyEvent);
+            var keyEvent = new InputEventKey
+            {
+                PhysicalKeycode = (Key)keycode,
+                Keycode = (Key)keycode,
+            };
+            InputMap.ActionAddEvent(action, keyEvent);
+        }
     }
 
     // ============================================================
@@ -162,7 +191,7 @@ public partial class SettingsManager : Node
 
         foreach (var action in DefaultKeys.Keys)
         {
-            ApplyBinding(action, GetActionKey(action));
+            ApplyBinding(action, GetActionKeys(action));
         }
     }
 

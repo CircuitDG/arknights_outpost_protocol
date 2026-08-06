@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://Scripts/GameWorldController.cs" id="1_world"]
 [ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="2_doctor"]
@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/SettlementPanel.tscn" id="9_settlement"]
 [ext_resource type="PackedScene" path="res://Scenes/Buildings/OutpostCore.tscn" id="10_core"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/TalentTree.tscn" id="11_talent"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SettingsPanel.tscn" id="12_settings"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/GameOverPanel.tscn" id="13_gameover"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_world")
@@ -69,3 +71,7 @@ StartWaveNumber = 1
 [node name="SettlementPanel" parent="UICanvas" instance=ExtResource("9_settlement")]
 
 [node name="TalentTree" parent="UICanvas" instance=ExtResource("11_talent")]
+
+[node name="SettingsPanel" parent="UICanvas" instance=ExtResource("12_settings")]
+
+[node name="GameOverPanel" parent="UICanvas" instance=ExtResource("13_gameover")]

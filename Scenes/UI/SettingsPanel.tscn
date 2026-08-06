@@ -75,6 +75,9 @@ custom_minimum_size = Vector2(90, 0)
 [node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_1"]
 text = "更改"
 
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_1"]
+text = "清空"
+
 [node name="KeyRow_2" type="HBoxContainer" parent="Panel/MainContainer/KeyRows"]
 
 [node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyRows/KeyRow_2"]
@@ -87,6 +90,9 @@ custom_minimum_size = Vector2(90, 0)
 
 [node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_2"]
 text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_2"]
+text = "清空"
 
 [node name="KeyRow_3" type="HBoxContainer" parent="Panel/MainContainer/KeyRows"]
 
@@ -101,6 +107,9 @@ custom_minimum_size = Vector2(90, 0)
 [node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_3"]
 text = "更改"
 
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_3"]
+text = "清空"
+
 [node name="KeyRow_4" type="HBoxContainer" parent="Panel/MainContainer/KeyRows"]
 
 [node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyRows/KeyRow_4"]
@@ -113,6 +122,9 @@ custom_minimum_size = Vector2(90, 0)
 
 [node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_4"]
 text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_4"]
+text = "清空"
 
 [node name="KeyRow_5" type="HBoxContainer" parent="Panel/MainContainer/KeyRows"]
 
@@ -127,6 +139,9 @@ custom_minimum_size = Vector2(90, 0)
 [node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_5"]
 text = "更改"
 
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_5"]
+text = "清空"
+
 [node name="KeyRow_6" type="HBoxContainer" parent="Panel/MainContainer/KeyRows"]
 
 [node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyRows/KeyRow_6"]
@@ -139,6 +154,9 @@ custom_minimum_size = Vector2(90, 0)
 
 [node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_6"]
 text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyRows/KeyRow_6"]
+text = "清空"
 
 [node name="CaptureLabel" type="Label" parent="Panel/MainContainer"]
 text = ""

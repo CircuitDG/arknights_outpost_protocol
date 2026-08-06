@@ -35,6 +35,8 @@ public partial class HUDController : Node
     private Control _helpPanel;
     private Button _helpToggleButton;
     private Button _helpCloseButton;
+    private Button _settingsToggleButton;
+    private Control _settingsPanel;
 
     private readonly Control[] _skillSlots = new Control[4];
     private readonly TextureRect[] _skillIcons = new TextureRect[4];
@@ -67,11 +69,14 @@ public partial class HUDController : Node
         _helpPanel = GetNodeOrNull<Control>("../Root/HelpPanel");
         _helpToggleButton = GetNodeOrNull<Button>("../Root/HelpToggleButton");
         _helpCloseButton = GetNodeOrNull<Button>("../Root/HelpPanel/HelpVBox/HelpCloseButton");
+        _settingsToggleButton = GetNodeOrNull<Button>("../Root/SettingsToggleButton");
+        _settingsPanel = GetNodeOrNull<Control>("../../UICanvas/SettingsPanel");
 
         FindOutpostCore();
 
         if (_helpToggleButton != null) _helpToggleButton.Pressed += ToggleHelp;
         if (_helpCloseButton != null) _helpCloseButton.Pressed += ToggleHelp;
+        if (_settingsToggleButton != null) _settingsToggleButton.Pressed += ToggleSettings;
 
         // 技能栏（F1-F4）
         for (int i = 1; i <= 4; i++)
@@ -134,6 +139,7 @@ public partial class HUDController : Node
 
         if (_helpToggleButton != null) _helpToggleButton.Pressed -= ToggleHelp;
         if (_helpCloseButton != null) _helpCloseButton.Pressed -= ToggleHelp;
+        if (_settingsToggleButton != null) _settingsToggleButton.Pressed -= ToggleSettings;
 
         UpdateSkillBar(null);
     }
@@ -195,6 +201,15 @@ public partial class HUDController : Node
         }
     }
 
+    /// <summary>切换游戏内设置面板</summary>
+    private void ToggleSettings()
+    {
+        if (_settingsPanel != null)
+        {
+            _settingsPanel.Visible = !_settingsPanel.Visible;
+        }
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         // T 键打开天赋树
@@ -207,6 +222,12 @@ public partial class HUDController : Node
         if (@event is InputEventKey helpKey && helpKey.Pressed && helpKey.Keycode == Key.H)
         {
             ToggleHelp();
+            return;
+        }
+
+        if (@event is InputEventKey settingsKey && settingsKey.Pressed && settingsKey.Keycode == Key.O)
+        {
+            ToggleSettings();
             return;
         }
 

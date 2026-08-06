@@ -237,6 +237,15 @@ offset_right = -12.0
 offset_bottom = 184.0
 text = "❓ 操作指引"
 
+[node name="SettingsToggleButton" type="Button" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_top = 190.0
+offset_right = -12.0
+offset_bottom = 224.0
+text = "⚙️ 设置"
+
 [node name="HelpPanel" type="Panel" parent="Root"]
 anchor_left = 0.5
 anchor_top = 0.5

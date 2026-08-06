@@ -28,6 +28,7 @@ public partial class SettingsPanelController : Control
 
     private readonly Label[] _keyLabels = new Label[6];
     private readonly Button[] _rebindButtons = new Button[6];
+    private readonly Button[] _clearButtons = new Button[6];
     private int _capturingIndex = -1;
 
     public override void _Ready()
@@ -43,11 +44,17 @@ public partial class SettingsPanelController : Control
         {
             _keyLabels[i] = GetNodeOrNull<Label>($"Panel/MainContainer/KeyRows/KeyRow_{i + 1}/KeyLabel");
             _rebindButtons[i] = GetNodeOrNull<Button>($"Panel/MainContainer/KeyRows/KeyRow_{i + 1}/RebindButton");
+            _clearButtons[i] = GetNodeOrNull<Button>($"Panel/MainContainer/KeyRows/KeyRow_{i + 1}/ClearButton");
 
             if (_rebindButtons[i] != null)
             {
                 int index = i;
                 _rebindButtons[i].Pressed += () => OnRebindPressed(index);
+            }
+            if (_clearButtons[i] != null)
+            {
+                int index = i;
+                _clearButtons[i].Pressed += () => OnClearPressed(index);
             }
         }
 
@@ -99,6 +106,12 @@ public partial class SettingsPanelController : Control
         if (_rebindButtons[index] != null) _rebindButtons[index].Text = "监听中...";
     }
 
+    private void OnClearPressed(int index)
+    {
+        SettingsManager.Instance.ClearActionKeys(_actions[index]);
+        Refresh();
+    }
+
     private void OnResetPressed()
     {
         SettingsManager.Instance.ResetDefaults();
@@ -128,8 +141,14 @@ public partial class SettingsPanelController : Control
         {
             if (_keyLabels[i] != null)
             {
-                int code = sm.GetActionKey(_actions[i]);
-                _keyLabels[i].Text = OS.GetKeycodeString((Key)code);
+                var keys = sm.GetActionKeys(_actions[i]);
+                string text = string.Empty;
+                for (int k = 0; k < keys.Count; k++)
+                {
+                    if (k > 0) text += " ";
+                    text += OS.GetKeycodeString((Key)keys[k]);
+                }
+                _keyLabels[i].Text = text.Length > 0 ? text : "未绑定";
             }
             if (_rebindButtons[i] != null) _rebindButtons[i].Text = "更改";
         }
