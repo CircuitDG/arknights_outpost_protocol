@@ -13,13 +13,31 @@ public enum BuildingType
     Ruin, // 废墟
 }
 
+/// <summary>房间类型</summary>
+public enum RoomType
+{
+    Hall, // 走廊/门厅
+    LivingRoom, // 客厅
+    Bedroom, // 卧室
+    Kitchen, // 厨房
+    Storage, // 储藏室
+    Workshop, // 仓库/车间
+}
+
+/// <summary>房间数据</summary>
+public class RoomData
+{
+    public Rect2I Rect;
+    public RoomType Type;
+}
+
 /// <summary>建筑数据</summary>
 public class BuildingData
 {
     public Rect2I Bounds;
     public BuildingType Type;
     public Vector2I Entrance;
-    public List<Rect2I> Rooms = new();
+    public List<RoomData> Rooms = new();
 }
 
 /// <summary>建筑内资源点</summary>

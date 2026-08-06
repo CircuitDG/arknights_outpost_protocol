@@ -40,6 +40,9 @@ public partial class Doctor : CharacterBody2D
     [ExportGroup("交互配置")]
     [Export] public float InteractionRange = 60.0f; // E 键交互范围
 
+    [ExportGroup("世界边界")]
+    [Export] public Vector2 MapBounds = new(3200, 3200); // 地图边界（世界坐标），由 GameWorld 设置
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -124,6 +127,12 @@ public partial class Doctor : CharacterBody2D
 
         // 3. 移动并碰撞检测
         MoveAndSlide();
+
+        // 4. 限制在地图边界内
+        GlobalPosition = new Vector2(
+            Mathf.Clamp(GlobalPosition.X, 0, MapBounds.X),
+            Mathf.Clamp(GlobalPosition.Y, 0, MapBounds.Y)
+        );
 
         // 4. 体力逻辑由 StaminaRegenTimer 驱动
     }

@@ -49,7 +49,7 @@ public partial class TestCityMapController : Node
             Vector2I farCell = Vector2I.Zero;
             foreach (var street in gw.MapData.StreetCells)
             {
-                if (street.X > 150 && street.Y > 150)
+                if (street.X > 250 && street.Y > 250)
                 {
                     farCell = street;
                     break;

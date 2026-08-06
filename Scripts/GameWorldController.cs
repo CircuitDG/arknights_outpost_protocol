@@ -39,7 +39,7 @@ public partial class GameWorldController : Node2D
         _spawner = GetNode<EnemySpawner>("EnemySpawner");
 
         // 程序化生成城市地图
-        var config = new MapConfig { Width = 200, Height = 200, Seed = 12345 };
+        var config = new MapConfig { Width = 300, Height = 300, Seed = 12345 };
         MapData = new MapGenerator(config).Generate();
 
         _grid.GridSize = TileSize;
@@ -67,7 +67,7 @@ public partial class GameWorldController : Node2D
         _builder.BuildIronCosts = new[] { 5, 5, 8 };
         _builder.BuildOriginiumCosts = new[] { 0, 0, 2 };
 
-        GD.Print($"[GameWorld] 城市生成完成 — 200x200, 建筑:{BuildingCount}, 资源点:{ResourcePointCount}, 可行走:{_grid.GridDimensions}");
+        GD.Print($"[GameWorld] 城市生成完成 — 300x300, 建筑:{BuildingCount}, 资源点:{ResourcePointCount}, 可行走:{_grid.GridDimensions}");
 
         // 继续游戏：待恢复（实际检测在 _Process，兼容场景就绪后才设置的标记）
         if (SaveManager.Instance is { RestoreOnGameLoad: true, HasRun: true })
@@ -114,17 +114,36 @@ public partial class GameWorldController : Node2D
     private void SetupChunkLoader(TileSet tileSet)
     {
         var container = new Node2D { Name = "ChunkContainer" };
-        GetNode<Node2D>("World").AddChild(container);
+        var world = GetNode<Node2D>("World");
+        world.AddChild(container);
+        world.MoveChild(container, 0); // 插到最底层，保证角色显示在瓦片之上
 
         var loader = new ChunkLoader
         {
             ChunkSize = 16,
             LoadRadius = 2,
+            AutoUnload = false,
             FollowTarget = GetNode<Node2D>("World/Doctor"),
         };
         loader.Setup(MapData, tileSet, container);
         AddChild(loader);
         ChunkLoader = loader;
+
+        // 相机限制在地图内 + 博士边界
+        float mapSize = MapData.Width * TileSize;
+        var doctor = GetNodeOrNull<Doctor>("World/Doctor");
+        if (doctor != null)
+        {
+            doctor.MapBounds = new Vector2(mapSize, mapSize);
+            var camera = doctor.GetNodeOrNull<Camera2D>("Camera2D");
+            if (camera != null)
+            {
+                camera.LimitLeft = 0;
+                camera.LimitTop = 0;
+                camera.LimitRight = (int)mapSize;
+                camera.LimitBottom = (int)mapSize;
+            }
+        }
     }
 
     // ============================================================

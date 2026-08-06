@@ -19,10 +19,6 @@ script = ExtResource("1_world")
 
 [node name="World" type="Node2D" parent="."]
 
-[node name="GroundLayer" type="TileMapLayer" parent="World"]
-
-[node name="ObstacleLayer" type="TileMapLayer" parent="World"]
-
 [node name="Doctor" parent="World" instance=ExtResource("2_doctor")]
 position = Vector2(96, 96)
 

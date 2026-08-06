@@ -295,7 +295,7 @@ public class MapGenerator
         foreach (var building in map.Buildings)
         {
             var rect = building.Bounds;
-            building.Rooms.Add(rect);
+            var roomRects = new List<Rect2I> { rect };
 
             // 大建筑：垂直/水平隔墙，中间留门
             if (rect.Size.X > 6 && rect.Size.Y > 4)
@@ -311,8 +311,8 @@ public class MapGenerator
                             map.Building[wallX, y] = 1;
                         }
                     }
-                    building.Rooms.Add(new Rect2I(rect.Position.X, rect.Position.Y, wallX - rect.Position.X, rect.Size.Y));
-                    building.Rooms.Add(new Rect2I(wallX + 1, rect.Position.Y, rect.Position.X + rect.Size.X - wallX - 1, rect.Size.Y));
+                    roomRects.Add(new Rect2I(rect.Position.X, rect.Position.Y, wallX - rect.Position.X, rect.Size.Y));
+                    roomRects.Add(new Rect2I(wallX + 1, rect.Position.Y, rect.Position.X + rect.Size.X - wallX - 1, rect.Size.Y));
                 }
             }
 
@@ -331,7 +331,32 @@ public class MapGenerator
                     }
                 }
             }
+
+            // 为每个房间分配类型（含入口的房间为门厅/客厅，其余按建筑类型）
+            foreach (var roomRect in roomRects)
+            {
+                bool nearEntrance = roomRect.HasPoint(building.Entrance);
+                building.Rooms.Add(new RoomData
+                {
+                    Rect = roomRect,
+                    Type = nearEntrance
+                        ? (building.Type == BuildingType.House ? RoomType.LivingRoom : RoomType.Hall)
+                        : GetInteriorRoomType(building.Type),
+                });
+            }
         }
+    }
+
+    private static RoomType GetInteriorRoomType(BuildingType buildingType)
+    {
+        return buildingType switch
+        {
+            BuildingType.House => RoomType.Bedroom,
+            BuildingType.Shop => RoomType.Storage,
+            BuildingType.Warehouse => RoomType.Workshop,
+            BuildingType.Office => RoomType.Storage,
+            _ => RoomType.Storage,
+        };
     }
 
     // ============================================================
@@ -354,14 +379,19 @@ public class MapGenerator
 
             for (int i = 0; i < count; i++)
             {
-                var cell = FindRandomFloorCell(map, building.Bounds, building.Entrance);
+                var room = building.Rooms.Count > 0
+                    ? building.Rooms[_rng.Next(0, building.Rooms.Count)]
+                    : null;
+                if (room == null) break;
+
+                var cell = FindRandomFloorCell(map, room.Rect, building.Entrance);
                 if (cell.X < 0) break;
 
                 var point = new ResourcePointData
                 {
                     Position = cell,
-                    ItemId = RollResourceItem(building.Type),
-                    Amount = _rng.Next(2, 6),
+                    ItemId = RollRoomItem(room.Type),
+                    Amount = _rng.Next(2, room.Type is RoomType.Storage or RoomType.Workshop ? 7 : 5),
                 };
                 map.ResourcePoints.Add(point);
             }
@@ -382,16 +412,19 @@ public class MapGenerator
         return new Vector2I(-1, -1);
     }
 
-    private int RollResourceItem(BuildingType type)
+    /// <summary>按房间类型分配战利品</summary>
+    private int RollRoomItem(RoomType roomType)
     {
         float roll = (float)_rng.NextDouble();
-        return type switch
+        return roomType switch
         {
-            BuildingType.House => roll < 0.5f ? 3 : roll < 0.8f ? 1 : 4, // 食物/木材/绷带
-            BuildingType.Shop => roll < 0.6f ? 3 : 2, // 食物/铁皮
-            BuildingType.Warehouse => roll < 0.6f ? 2 : 1, // 铁皮/木材
-            BuildingType.Office => roll < 0.7f ? 2 : 5, // 铁皮/源石
-            _ => roll < 0.7f ? 1 : 2, // 废墟：木材/铁皮
+            RoomType.Hall => roll < 0.4f ? 3 : roll < 0.7f ? 1 : 4, // 食物/木材/绷带
+            RoomType.LivingRoom => roll < 0.4f ? 3 : roll < 0.7f ? 1 : 4,
+            RoomType.Kitchen => roll < 0.7f ? 3 : roll < 0.9f ? 4 : 1, // 食物为主
+            RoomType.Bedroom => roll < 0.45f ? 4 : roll < 0.8f ? 1 : 5, // 绷带/木材/源石
+            RoomType.Storage => roll < 0.4f ? 1 : roll < 0.8f ? 2 : 5, // 木材/铁皮/源石
+            RoomType.Workshop => roll < 0.5f ? 2 : roll < 0.8f ? 5 : 1, // 铁皮/源石/木材
+            _ => roll < 0.7f ? 1 : 2,
         };
     }
 

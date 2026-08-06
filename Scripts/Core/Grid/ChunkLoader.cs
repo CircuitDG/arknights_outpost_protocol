@@ -13,6 +13,7 @@ public partial class ChunkLoader : Node
     [ExportGroup("分块配置")]
     [Export] public int ChunkSize = 16; // 每块格子数
     [Export] public int LoadRadius = 2; // 加载半径（块数），实际 (2R+1)² 块
+    [Export] public bool AutoUnload = false; // 是否自动卸载远离的块（默认保留）
 
     [ExportGroup("跟随目标")]
     [Export] public Node2D FollowTarget; // 如博士
@@ -68,17 +69,20 @@ public partial class ChunkLoader : Node
             }
         }
 
-        var toRemove = new List<Vector2I>();
-        foreach (var kvp in _loadedChunks)
+        if (AutoUnload)
         {
-            if (!neededChunks.Contains(kvp.Key))
+            var toRemove = new List<Vector2I>();
+            foreach (var kvp in _loadedChunks)
             {
-                toRemove.Add(kvp.Key);
+                if (!neededChunks.Contains(kvp.Key))
+                {
+                    toRemove.Add(kvp.Key);
+                }
             }
-        }
-        foreach (var key in toRemove)
-        {
-            UnloadChunk(key);
+            foreach (var key in toRemove)
+            {
+                UnloadChunk(key);
+            }
         }
     }
 
@@ -90,8 +94,9 @@ public partial class ChunkLoader : Node
             Position = new Vector2(chunkPos.X * ChunkSize * 16, chunkPos.Y * ChunkSize * 16),
         };
 
-        var ground = new TileMapLayer { Name = "GroundLayer", TileSet = _tileSet };
-        var obstacle = new TileMapLayer { Name = "ObstacleLayer", TileSet = _tileSet };
+        // 图层层级：地面在最下，障碍在其上，角色(z=0)永远显示在瓦片之上
+        var ground = new TileMapLayer { Name = "GroundLayer", TileSet = _tileSet, ZIndex = -2 };
+        var obstacle = new TileMapLayer { Name = "ObstacleLayer", TileSet = _tileSet, ZIndex = -1 };
         chunk.AddChild(ground);
         chunk.AddChild(obstacle);
 
