@@ -74,8 +74,8 @@ public partial class TestInventoryController : Node
         }
         else if (_frameCount == 8)
         {
-            // 补足建造资源
-            _backpack.AddItem(Backpack.WOOD_ITEM_ID, 97);
+            // 补足建造资源（木材堆叠上限 99，已有 3 个，最多补 96）
+            _backpack.AddItem(Backpack.WOOD_ITEM_ID, 96);
             _backpack.AddItem(Backpack.IRON_ITEM_ID, 50);
             GD.Print($"[TestInventory] 补足资源后 — 木材:{_backpack.GetCount(Backpack.WOOD_ITEM_ID)}, 铁:{_backpack.GetCount(Backpack.IRON_ITEM_ID)}");
         }

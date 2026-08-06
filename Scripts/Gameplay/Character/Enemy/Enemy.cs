@@ -1,5 +1,6 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Entity.Components;
 using OutpostProtocol.Gameplay.Inventory;
@@ -29,6 +30,9 @@ public partial class Enemy : BaseEntity
     /// <summary>掉落物预制体（未设置时只走背包直发逻辑）</summary>
     [Export] public PackedScene LootScene;
 
+    [ExportGroup("核心攻击")]
+    [Export] public int CoreDamage = 10; // 对核心造成的伤害
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -36,6 +40,8 @@ public partial class Enemy : BaseEntity
     private Vector2 _targetPosition; // 目标点（前哨站核心）
     private BaseEntity _currentTarget; // 当前攻击目标
     private bool _hasTargetPosition;
+    private OutpostCore _targetCore;
+    private bool _isAttackingCore;
 
     // ============================================================
     // 生命周期
@@ -44,6 +50,9 @@ public partial class Enemy : BaseEntity
     public override void _Ready()
     {
         base._Ready();
+
+        // 查找目标点上的前哨站核心
+        _targetCore = GetTree().GetFirstNodeInGroup("outpost_core") as OutpostCore;
 
         // 标记阵营
         Faction = FactionType.Enemy;
@@ -155,8 +164,16 @@ public partial class Enemy : BaseEntity
     {
         if (!_hasTargetPosition) return;
 
-        // 如果接近目标点，停止移动
         float dist = GlobalPosition.DistanceTo(_targetPosition);
+
+        // 接近核心 → 攻击核心而不是走到中心
+        if (dist < 30.0f && _targetCore != null && !_targetCore.IsDestroyed)
+        {
+            AttackCore();
+            return;
+        }
+
+        // 如果接近目标点，停止移动
         if (dist < 10.0f)
         {
             Movement?.Stop();
@@ -168,6 +185,28 @@ public partial class Enemy : BaseEntity
         {
             Movement.MoveTo(_targetPosition);
         }
+    }
+
+    private void AttackCore()
+    {
+        if (_isAttackingCore) return;
+        if (_targetCore == null || _targetCore.IsDestroyed) return;
+
+        _isAttackingCore = true;
+        Movement?.Stop();
+
+        GD.Print($"[{EntityName}] 攻击核心！");
+        _targetCore.TakeDamage(CoreDamage);
+
+        // 攻击后延迟再攻击（避免刷屏，核心自身也有伤害冷却）
+        GetTree().CreateTimer(1.0f).Timeout += () =>
+        {
+            _isAttackingCore = false;
+            if (_targetCore != null && !_targetCore.IsDestroyed)
+            {
+                AttackCore();
+            }
+        };
     }
 
     // ============================================================

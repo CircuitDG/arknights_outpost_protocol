@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
+using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Inventory;
@@ -33,6 +34,8 @@ public partial class SettlementPanelController : Control
     private VBoxContainer _operatorContainer;
     private Button _continueButton;
     private Label _autoContinueLabel;
+    private Label _coreHealthLabel;
+    private Label _coreStatusLabel;
 
     // ============================================================
     // 运行时状态
@@ -57,6 +60,8 @@ public partial class SettlementPanelController : Control
         _operatorContainer = GetNodeOrNull<VBoxContainer>("Panel/MainContainer/OperatorContainer");
         _continueButton = GetNodeOrNull<Button>("Panel/MainContainer/ButtonContainer/ContinueButton");
         _autoContinueLabel = GetNodeOrNull<Label>("Panel/MainContainer/ButtonContainer/AutoContinueLabel");
+        _coreHealthLabel = GetNodeOrNull<Label>("Panel/MainContainer/CoreHealthLabel");
+        _coreStatusLabel = GetNodeOrNull<Label>("Panel/MainContainer/CoreStatusLabel");
 
         Hide();
 
@@ -141,52 +146,40 @@ public partial class SettlementPanelController : Control
 
     private SettlementData CollectSettlementData()
     {
-        var gm = GameManager.Instance;
-        var spawner = GetTree().CurrentScene?.GetNodeOrNull<EnemySpawner>("EnemySpawner");
-
-        var operators = new List<OperatorSettlementInfo>();
-        int totalExp = 0;
-
-        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        var stats = DailyStatsManager.Instance?.CurrentStats;
+        if (stats == null)
         {
-            if (node is Operator op)
+            GD.PushWarning("[SettlementPanel] DailyStatsManager 未就绪，使用空数据");
+            return new SettlementData
             {
-                totalExp += op.CurrentExp;
-                int levelBefore = _prevLevels.GetValueOrDefault(op.OperatorDataId, op.CurrentLevel);
-                operators.Add(new OperatorSettlementInfo
-                {
-                    OperatorId = op.OperatorDataId,
-                    Name = op.EntityName,
-                    LevelBefore = levelBefore,
-                    LevelAfter = op.CurrentLevel,
-                    ExpGained = op.CurrentExp,
-                    WasInjured = false, // TODO: 接入受伤状态跟踪
-                    IsDown = op.State == OperatorState.Down,
-                    Kills = 0, // TODO: 按干员统计击杀
-                });
-            }
+                DayNumber = GameManager.Instance?.DayCount ?? 1,
+            };
         }
 
-        // 资源：展示当前背包持有（后续可升级为"当日增量"统计）
-        var resources = new Dictionary<int, int>();
-        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Node2D;
-        var backpack = doctor?.GetNodeOrNull<Backpack>("Backpack");
-        if (backpack != null)
+        var operators = new List<OperatorSettlementInfo>();
+        foreach (var snapshot in stats.OperatorSnapshots)
         {
-            foreach (var kvp in backpack.Items)
+            operators.Add(new OperatorSettlementInfo
             {
-                resources[kvp.Key] = kvp.Value;
-            }
+                OperatorId = snapshot.OperatorId,
+                Name = snapshot.Name,
+                LevelBefore = DailyStatsManager.Instance.GetOperatorLevelAtStart(snapshot.OperatorId),
+                LevelAfter = snapshot.Level,
+                ExpGained = DailyStatsManager.Instance.GetOperatorExpGained(snapshot.OperatorId),
+                Kills = DailyStatsManager.Instance.GetOperatorKills(snapshot.OperatorId),
+                WasInjured = snapshot.MaxHealth > 0 && snapshot.Health < snapshot.MaxHealth * 0.5f,
+                IsDown = snapshot.IsDown,
+            });
         }
 
         return new SettlementData
         {
-            DayNumber = gm?.DayCount ?? 1,
-            TotalKills = spawner?.EnemiesKilled ?? 0,
-            TotalExpGained = totalExp,
-            ResourcesGained = resources,
+            DayNumber = stats.DayNumber,
+            TotalKills = stats.TotalKills,
+            TotalExpGained = stats.TotalExpGained,
+            ResourcesGained = stats.ResourcesGained,
             Operators = operators,
-            WaveNumber = spawner?.CurrentWaveNumber ?? 1,
+            WaveNumber = stats.WavesCleared,
             IsGameOver = false,
         };
     }
@@ -201,6 +194,24 @@ public partial class SettlementPanelController : Control
 
         UpdateResourceList();
         UpdateOperatorList();
+        UpdateCoreStatus();
+    }
+
+    private void UpdateCoreStatus()
+    {
+        var core = GetTree().GetFirstNodeInGroup("outpost_core") as OutpostCore;
+        if (core == null) return;
+
+        if (_coreStatusLabel != null)
+        {
+            _coreStatusLabel.Text = core.IsDestroyed ? "💀 已摧毁" : "🛡️ 运转中";
+            _coreStatusLabel.Modulate = core.IsDestroyed ? Colors.Red : Colors.Green;
+        }
+
+        if (_coreHealthLabel != null)
+        {
+            _coreHealthLabel.Text = $"核心: {core.CurrentHealth}/{core.MaxHealth}";
+        }
     }
 
     private void UpdateResourceList()

@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
+using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.UI.Controllers;
 
@@ -54,6 +55,10 @@ public partial class GameManager : Node
     private int _dayCount = 1;
     private EnemySpawner _enemySpawner;
     private SettlementPanelController _settlementPanel;
+    private GameOverReason _gameOverReason = GameOverReason.DoctorDied;
+
+    /// <summary>游戏结束原因</summary>
+    public GameOverReason GameOverReason => _gameOverReason;
 
     /// <summary>当前阶段总时长（秒）</summary>
     private float CurrentPhaseDuration => _currentState switch
@@ -274,10 +279,22 @@ public partial class GameManager : Node
     public void GameOver()
     {
         SwitchState(GameState.GameOver);
-        GD.Print("[GameManager] 游戏结束");
-        EventBus.Instance.EmitDoctorDied();
+        GD.Print($"[GameManager] 游戏结束 (原因: {_gameOverReason})");
+
+        // 仅博士死亡时触发 DoctorDied（SaveManager 硬核删档/博士清理）
+        if (_gameOverReason == GameOverReason.DoctorDied)
+        {
+            EventBus.Instance.EmitDoctorDied();
+        }
 
         // TODO: 触发硬核删除逻辑（由 SaveManager 处理）
+    }
+
+    /// <summary>游戏结束（带原因）</summary>
+    public void GameOverWithReason(GameOverReason reason)
+    {
+        _gameOverReason = reason;
+        GameOver();
     }
 
     // ============================================================

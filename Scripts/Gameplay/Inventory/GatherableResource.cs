@@ -125,6 +125,7 @@ public partial class GatherableResource : Node2D
         string itemName = DataManager.Instance.GetItem(ItemId)?.Name ?? $"物品{ItemId}";
         GD.Print($"[GatherableResource] 采集到 {AmountPerGather} 个 {itemName}（剩余 {_remaining}）");
         EventBus.Instance.EmitLogMessage($"采集到 {AmountPerGather} 个 {itemName}", "INFO");
+        EventBus.Instance.EmitResourceGathered(ItemId, AmountPerGather);
 
         UpdateVisuals();
 

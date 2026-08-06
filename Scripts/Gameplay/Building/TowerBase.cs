@@ -255,6 +255,7 @@ public partial class TowerBase : Node2D
 
         GD.Print($"[{Name}] 升级成功！Lv.{CurrentLevel}");
         EventBus.Instance.EmitLogMessage($"{Name} 升级到 Lv.{CurrentLevel}", "INFO");
+        EventBus.Instance.EmitTowerUpgraded(TowerDataId, CurrentLevel);
         return true;
     }
 

@@ -71,3 +71,11 @@ text = "自动继续: 5s"
 [node name="BonusLabel" type="Label" parent="Panel/MainContainer"]
 text = "奖励: 天赋点 +1"
 horizontal_alignment = 1
+
+[node name="CoreHealthLabel" type="Label" parent="Panel/MainContainer"]
+text = "核心: 100/100"
+horizontal_alignment = 1
+
+[node name="CoreStatusLabel" type="Label" parent="Panel/MainContainer"]
+text = "🛡️ 运转中"
+horizontal_alignment = 1

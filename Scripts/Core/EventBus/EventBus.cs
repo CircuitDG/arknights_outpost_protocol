@@ -150,6 +150,34 @@ public partial class EventBus : Node
     public delegate void ResourceRespawnedEventHandler(Vector2 position, int itemId);
 
     // ============================================================
+    // 12. 每日统计信号
+    // ============================================================
+
+    /// <summary>干员获得经验</summary>
+    [Signal]
+    public delegate void OperatorExpGainedEventHandler(int operatorId, int amount);
+
+    /// <summary>采集获得资源</summary>
+    [Signal]
+    public delegate void ResourceGatheredEventHandler(int itemId, int quantity);
+
+    /// <summary>建造防御塔</summary>
+    [Signal]
+    public delegate void TowerBuiltEventHandler(int towerId);
+
+    /// <summary>防御塔升级</summary>
+    [Signal]
+    public delegate void TowerUpgradedEventHandler(int towerId, int newLevel);
+
+    /// <summary>核心受损</summary>
+    [Signal]
+    public delegate void CoreDamagedEventHandler(int currentHealth, int damage);
+
+    /// <summary>核心修复</summary>
+    [Signal]
+    public delegate void CoreRepairedEventHandler(int amount);
+
+    // ============================================================
     // 生命周期
     // ============================================================
 
@@ -306,6 +334,42 @@ public partial class EventBus : Node
     public void EmitResourceRespawned(Vector2 position, int itemId)
     {
         EmitSignal(SignalName.ResourceRespawned, position, itemId);
+    }
+
+    /// <summary>触发干员获得经验</summary>
+    public void EmitOperatorExpGained(int operatorId, int amount)
+    {
+        EmitSignal(SignalName.OperatorExpGained, operatorId, amount);
+    }
+
+    /// <summary>触发采集获得资源</summary>
+    public void EmitResourceGathered(int itemId, int quantity)
+    {
+        EmitSignal(SignalName.ResourceGathered, itemId, quantity);
+    }
+
+    /// <summary>触发防御塔建造</summary>
+    public void EmitTowerBuilt(int towerId)
+    {
+        EmitSignal(SignalName.TowerBuilt, towerId);
+    }
+
+    /// <summary>触发防御塔升级</summary>
+    public void EmitTowerUpgraded(int towerId, int newLevel)
+    {
+        EmitSignal(SignalName.TowerUpgraded, towerId, newLevel);
+    }
+
+    /// <summary>触发核心受损</summary>
+    public void EmitCoreDamaged(int currentHealth, int damage)
+    {
+        EmitSignal(SignalName.CoreDamaged, currentHealth, damage);
+    }
+
+    /// <summary>触发核心修复</summary>
+    public void EmitCoreRepaired(int amount)
+    {
+        EmitSignal(SignalName.CoreRepaired, amount);
     }
 }
 

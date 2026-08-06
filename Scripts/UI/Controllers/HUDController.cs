@@ -28,6 +28,11 @@ public partial class HUDController : Node
     private Label _waveLabel;
     private Label _phaseNotice;
 
+    private Label _coreHealthLabel;
+    private ProgressBar _coreHealthBar;
+    private Label _coreStatusLabel;
+    private OutpostCore _outpostCore;
+
     private readonly Control[] _skillSlots = new Control[4];
     private readonly TextureRect[] _skillIcons = new TextureRect[4];
     private readonly TextureProgressBar[] _skillCooldowns = new TextureProgressBar[4];
@@ -53,6 +58,11 @@ public partial class HUDController : Node
         _skillLabel = GetNode<Label>("../Root/BottomRightVBox/SkillLabel");
         _waveLabel = GetNode<Label>("../Root/BottomLeftVBox/WaveLabel");
         _phaseNotice = GetNode<Label>("../Root/PhaseNotice");
+        _coreHealthLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreHealthLabel");
+        _coreHealthBar = GetNodeOrNull<ProgressBar>("../Root/TopLeftVBox/CoreHealthBar");
+        _coreStatusLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreStatusLabel");
+
+        FindOutpostCore();
 
         // 技能栏（F1-F4）
         for (int i = 1; i <= 4; i++)
@@ -114,6 +124,54 @@ public partial class HUDController : Node
         eb.SkillCooldownUpdated -= OnSkillCooldownUpdated;
 
         UpdateSkillBar(null);
+    }
+
+    // ============================================================
+    // 核心血量显示
+    // ============================================================
+
+    private void FindOutpostCore()
+    {
+        _outpostCore = GetTree().GetFirstNodeInGroup("outpost_core") as OutpostCore;
+        if (_outpostCore != null)
+        {
+            _outpostCore.OnDamaged += UpdateCoreHealth;
+            _outpostCore.OnDestroyed += OnCoreDestroyed;
+            UpdateCoreHealth(_outpostCore.CurrentHealth);
+        }
+    }
+
+    private void UpdateCoreHealth(int currentHealth)
+    {
+        if (_outpostCore == null) return;
+
+        if (_coreHealthBar != null)
+        {
+            _coreHealthBar.MaxValue = _outpostCore.MaxHealth;
+            _coreHealthBar.Value = currentHealth;
+            _coreHealthBar.Modulate = _outpostCore.HealthPercent > 0.5f ? Colors.Green
+                : _outpostCore.HealthPercent > 0.25f ? Colors.Yellow : Colors.Red;
+        }
+
+        if (_coreHealthLabel != null)
+        {
+            _coreHealthLabel.Text = $"核心: {currentHealth}/{_outpostCore.MaxHealth}";
+        }
+
+        if (_coreStatusLabel != null)
+        {
+            _coreStatusLabel.Text = _outpostCore.IsDestroyed ? "💀 已摧毁" : "🛡️ 运转中";
+            _coreStatusLabel.Modulate = _outpostCore.IsDestroyed ? Colors.Red : Colors.Green;
+        }
+    }
+
+    private void OnCoreDestroyed()
+    {
+        if (_coreStatusLabel != null)
+        {
+            _coreStatusLabel.Text = "💀 已摧毁";
+            _coreStatusLabel.Modulate = Colors.Red;
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)

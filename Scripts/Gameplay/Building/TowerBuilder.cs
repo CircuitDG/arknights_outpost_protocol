@@ -177,6 +177,7 @@ public partial class TowerBuilder : Node
         tower.GlobalPosition = pos;
 
         GD.Print($"[TowerBuilder] 塔已放置: {tower.Data?.Name ?? "Unknown"} 在 ({pos.X:F0}, {pos.Y:F0})");
+        EventBus.Instance.EmitTowerBuilt(tower.TowerDataId);
         return true;
     }
 

@@ -229,6 +229,7 @@ public partial class Operator : BaseEntity
         if (_data == null || _currentLevel >= _data.MaxLevel) return;
 
         _currentExp += amount;
+        EventBus.Instance.EmitOperatorExpGained(OperatorDataId, amount);
 
         // 检查升级
         while (_currentLevel < _data.MaxLevel)

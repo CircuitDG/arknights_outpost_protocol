@@ -514,5 +514,13 @@ public partial class SaveManager : Node
         {
             UpdateRunFromGame();
         }
+
+        // 游戏结束（无论博士死亡还是核心被毁）→ 硬核删除对局存档
+        if (newState == GameState.GameOver && _currentRun != null)
+        {
+            _currentRun.IsGameOver = true;
+            SaveRun();
+            DeleteCurrentRun();
+        }
     }
 }
