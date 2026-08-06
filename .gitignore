@@ -1,0 +1,25 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+export_presets.cfg
+
+*.tmp
+*.translation
+*.import
+
+# C# / Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+*.csproj.user
+*.sln.user
+*.suo
+bin/
+obj/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志
+*.log
