@@ -1,5 +1,6 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Managers;
 
 /// <summary>
@@ -11,6 +12,10 @@ public partial class TestEventBus : Node
 {
     private int _frameCount;
     private bool _dataTestPending = true;
+    private bool _stateMachineTestActive = true;
+    private Doctor _doctor;
+    private Vector2 _startPos;
+    private float _startStamina;
 
     public override void _Ready()
     {
@@ -47,16 +52,34 @@ public partial class TestEventBus : Node
         }
 
         // 每 3 帧跳过当前阶段，快速走完：探索 → 建设 → 防守 → 休整 → 次日探索
-        if (_frameCount % 3 == 0)
+        if (_stateMachineTestActive && _frameCount % 3 == 0)
         {
             GameManager.Instance.SkipCurrentPhase();
         }
 
-        // 跑完两轮状态机后验证 GameOver，然后退出
-        if (_frameCount >= 15)
+        if (_frameCount == 15)
         {
-            GD.Print("[测试] GameManager 状态机测试完成，触发 GameOver");
-            GameManager.Instance.GameOver();
+            _stateMachineTestActive = false;
+            GD.Print("[测试] GameManager 状态机循环测试完成（GameOver 交由 Doctor 死亡验证）");
+        }
+        else if (_frameCount == 18)
+        {
+            TestDoctorInit();
+        }
+        else if (_frameCount == 20)
+        {
+            StartDoctorMovementTest();
+        }
+        else if (_frameCount == 40)
+        {
+            FinishDoctorMovementTest();
+        }
+        else if (_frameCount == 42)
+        {
+            TestDoctorDeath();
+        }
+        else if (_frameCount >= 44)
+        {
             GetTree().Quit();
         }
     }
@@ -74,6 +97,54 @@ public partial class TestEventBus : Node
     private void OnLogMessage(string message, string level)
     {
         GD.Print($"[日志] {level}: {message}");
+    }
+
+    private void TestDoctorInit()
+    {
+        _doctor = GetNodeOrNull<Doctor>("/root/Main/World/Doctor");
+        if (_doctor == null)
+        {
+            GD.Print("[测试] 未找到 Doctor 节点");
+            return;
+        }
+
+        GD.Print("========== Doctor 测试 ==========");
+        GD.Print($"HP: {_doctor.CurrentHealth}/{_doctor.MaxHealthValue}");
+        GD.Print($"体力: {_doctor.CurrentStamina}/{_doctor.MaxStaminaValue}");
+        GD.Print($"输入绑定: 左={InputMap.ActionGetEvents("move_left").Count}, 右={InputMap.ActionGetEvents("move_right").Count}, 上={InputMap.ActionGetEvents("move_up").Count}, 下={InputMap.ActionGetEvents("move_down").Count}, 冲刺={InputMap.ActionGetEvents("sprint").Count}");
+    }
+
+    private void StartDoctorMovementTest()
+    {
+        if (_doctor == null) return;
+
+        _startPos = _doctor.GlobalPosition;
+        _startStamina = _doctor.CurrentStamina;
+        Input.ActionPress("move_right");
+        Input.ActionPress("sprint");
+        GD.Print("[测试] 开始冲刺移动测试 (move_right + sprint)");
+    }
+
+    private void FinishDoctorMovementTest()
+    {
+        if (_doctor == null) return;
+
+        Input.ActionRelease("move_right");
+        Input.ActionRelease("sprint");
+
+        float movedX = _doctor.GlobalPosition.X - _startPos.X;
+        float staminaUsed = _startStamina - _doctor.CurrentStamina;
+        GD.Print($"[测试] 冲刺移动结果: 位移X={movedX:F1}px, 冲刺中={_doctor.IsSprinting}, 体力消耗={staminaUsed:F1}");
+    }
+
+    private void TestDoctorDeath()
+    {
+        if (_doctor == null) return;
+
+        _doctor.TakeDamage(20f);
+        GD.Print($"[测试] 受伤后 HP: {_doctor.CurrentHealth}");
+        _doctor.TakeDamage(999f);
+        GD.Print($"[测试] 博士死亡状态: {_doctor.IsDead}");
     }
 
     private void TestDataManager()

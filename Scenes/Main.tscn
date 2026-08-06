@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="1_doctor_scene"]
+[ext_resource type="Script" path="res://Scripts/TestEventBus.cs" id="2_test"]
+
+[node name="Main" type="Node2D"]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Doctor" parent="World" instance=ExtResource("1_doctor_scene")]
+
+[node name="TestEventBus" type="Node" parent="."]
+script = ExtResource("2_test")
