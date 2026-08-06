@@ -1,21 +1,21 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Core.Grid;
+using OutpostProtocol.Core.MapGeneration;
 using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.Gameplay.Character.Operator;
+using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
 
 /// <summary>
 /// 主世界初始化控制器
-/// 运行时生成 20x20 测试地图、构建网格、注入场景引用（规避 C# Node 导出的 NodePath 序列化问题）
+/// 程序化生成 200×200 城市废墟 → 绘制图层 → 构建网格 → 注入引用 → 可选存档恢复
 /// </summary>
 public partial class GameWorldController : Node2D
 {
-    private const int GridWidth = 20;
-    private const int GridHeight = 20;
     private const int TileSize = 16;
 
     private GridManager _grid;
@@ -25,6 +25,12 @@ public partial class GameWorldController : Node2D
     private EnemySpawner _spawner;
     private bool _restoreStarted;
 
+    /// <summary>生成的地图数据（供测试/调试读取）</summary>
+    public MapData MapData { get; private set; }
+
+    public int BuildingCount => MapData?.Buildings.Count ?? 0;
+    public int ResourcePointCount => MapData?.ResourcePoints.Count ?? 0;
+
     public override void _Ready()
     {
         _grid = GridManager.Instance;
@@ -33,14 +39,23 @@ public partial class GameWorldController : Node2D
         _builder = GetNode<TowerBuilder>("TowerBuilder");
         _spawner = GetNode<EnemySpawner>("EnemySpawner");
 
-        // 构建网格
+        // 程序化生成城市地图
+        var config = new MapConfig { Width = 200, Height = 200, Seed = 12345 };
+        MapData = new MapGenerator(config).Generate();
+
         _grid.GridSize = TileSize;
         SetupTileSet(_ground);
         SetupTileSet(_obstacles);
-        PaintGround();
-        PaintObstacles();
+        PaintMap();
         _grid.ObstacleLayer = _obstacles;
         _grid.BuildGrid();
+
+        PlacePlayerAndOutpost();
+        SpawnResourceNodes();
+
+        // 移除场景预设的小测试资源点（城市地图改为程序化分布）
+        GetNodeOrNull<Node2D>("World/Gatherable_1")?.QueueFree();
+        GetNodeOrNull<Node2D>("World/Gatherable_2")?.QueueFree();
 
         // 注入场景引用
         _spawner.TargetPoint = GetNode<Node2D>("TargetPoint");
@@ -55,9 +70,9 @@ public partial class GameWorldController : Node2D
         _builder.BuildIronCosts = new[] { 5, 5, 8 };
         _builder.BuildOriginiumCosts = new[] { 0, 0, 2 };
 
-        GD.Print("[GameWorld] 世界初始化完成 — 地图 20x20, 资源点/波次/建造系统已接线");
+        GD.Print($"[GameWorld] 城市生成完成 — 200x200, 建筑:{BuildingCount}, 资源点:{ResourcePointCount}, 可行走:{_grid.GridDimensions}");
 
-        // 继续游戏：标记待恢复（实际检测在 _Process，兼容场景就绪后才设置的标记）
+        // 继续游戏：待恢复（实际检测在 _Process，兼容场景就绪后才设置的标记）
         if (SaveManager.Instance is { RestoreOnGameLoad: true, HasRun: true })
         {
             GD.Print("[GameWorld] 检测到对局存档，等待数据就绪后恢复");
@@ -71,7 +86,6 @@ public partial class GameWorldController : Node2D
         if (sm == null || !sm.RestoreOnGameLoad || !sm.HasRun) return;
         if (DataManager.Instance == null || !DataManager.Instance.IsLoaded) return;
 
-        // 等待所有干员数据就绪（DataManager 异步）
         foreach (var node in GetTree().GetNodesInGroup("operators"))
         {
             if (node is Operator op && op.Data == null) return;
@@ -81,58 +95,9 @@ public partial class GameWorldController : Node2D
         RestoreRun();
     }
 
-    /// <summary>从 RunSave 恢复博士/干员/塔/游戏状态</summary>
-    private void RestoreRun()
-    {
-        var sm = SaveManager.Instance;
-        var run = sm?.CurrentRun;
-        if (run == null) return;
-
-        // 1. 博士
-        var doctor = GetNodeOrNull<Doctor>("World/Doctor");
-        if (doctor != null)
-        {
-            doctor.RestorePosition(new Vector2(run.DoctorPosX, run.DoctorPosY));
-            doctor.SetHealth(run.DoctorHealth);
-            doctor.SetStamina(run.DoctorStamina);
-        }
-
-        // 2. 游戏状态
-        GameManager.Instance?.RestoreState(new SaveState
-        {
-            DayCount = run.DayCount,
-            CurrentPhase = run.CurrentPhase,
-            CurrentState = (int)GameState.Explore,
-        });
-
-        // 3. 干员
-        foreach (var node in GetTree().GetNodesInGroup("operators"))
-        {
-            if (node is not Operator op) continue;
-            var rt = run.Operators.Find(o => o.OperatorId == op.OperatorDataId);
-            if (rt != null)
-            {
-                op.RestoreFromRuntime(rt);
-            }
-        }
-
-        // 4. 防御塔
-        foreach (var rt in run.Towers)
-        {
-            if (_builder?.TowerPrefabs == null || rt.TowerId < 1 || rt.TowerId > _builder.TowerPrefabs.Length)
-            {
-                continue;
-            }
-
-            var tower = _builder.TowerPrefabs[rt.TowerId - 1].Instantiate<TowerBase>();
-            _builder.TowerContainer.AddChild(tower);
-            tower.GlobalPosition = new Vector2(rt.PosX, rt.PosY);
-            tower.RestoreFromRuntime(rt);
-        }
-
-        sm.RestoreOnGameLoad = false;
-        GD.Print($"[GameWorld] 对局恢复完成 — Day {run.DayCount}, 干员:{run.Operators.Count}, 塔:{run.Towers.Count}");
-    }
+    // ============================================================
+    // 地图绘制
+    // ============================================================
 
     private void SetupTileSet(TileMapLayer layer)
     {
@@ -149,33 +114,121 @@ public partial class GameWorldController : Node2D
         layer.TileSet = tileSet;
     }
 
-    private void PaintGround()
+    private void PaintMap()
     {
-        for (int x = 0; x < GridWidth; x++)
+        for (int x = 0; x < MapData.Width; x++)
         {
-            for (int y = 0; y < GridHeight; y++)
+            for (int y = 0; y < MapData.Height; y++)
             {
                 _ground.SetCell(new Vector2I(x, y), 0, new Vector2I(0, 0));
+                if (MapData.Building[x, y] == 1)
+                {
+                    _obstacles.SetCell(new Vector2I(x, y), 0, new Vector2I(1, 0));
+                }
             }
         }
     }
 
-    private void PaintObstacles()
+    // ============================================================
+    // 玩家/前哨站/资源
+    // ============================================================
+
+    private void PlacePlayerAndOutpost()
     {
-        for (int x = 0; x < GridWidth; x++)
+        var outpostWorld = _grid.GridToWorld(MapData.OutpostCell);
+        GetNode<Node2D>("TargetPoint").GlobalPosition = outpostWorld;
+
+        // 找离前哨站最近的街道格作为出生点
+        Vector2I spawnCell = MapData.OutpostCell;
+        int bestDist = int.MaxValue;
+        foreach (var street in MapData.StreetCells)
         {
-            _obstacles.SetCell(new Vector2I(x, 0), 0, new Vector2I(1, 0));
-            _obstacles.SetCell(new Vector2I(x, GridHeight - 1), 0, new Vector2I(1, 0));
-        }
-        for (int y = 0; y < GridHeight; y++)
-        {
-            _obstacles.SetCell(new Vector2I(0, y), 0, new Vector2I(1, 0));
-            _obstacles.SetCell(new Vector2I(GridWidth - 1, y), 0, new Vector2I(1, 0));
+            int dist = Mathf.Abs(street.X - MapData.OutpostCell.X) + Mathf.Abs(street.Y - MapData.OutpostCell.Y);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                spawnCell = street;
+            }
         }
 
-        for (int y = 5; y <= 14; y++)
+        Vector2 spawnWorld = _grid.GridToWorld(spawnCell);
+        var doctor = GetNode<Node2D>("World/Doctor");
+        doctor.GlobalPosition = spawnWorld;
+        GetNode<Node2D>("World/Operator_1").GlobalPosition = spawnWorld + new Vector2(TileSize, 0);
+        GetNode<Node2D>("World/Operator_2").GlobalPosition = spawnWorld + new Vector2(0, TileSize);
+    }
+
+    private void SpawnResourceNodes()
+    {
+        var container = GetNodeOrNull<Node2D>("World/ResourceContainer");
+        if (container == null)
         {
-            _obstacles.SetCell(new Vector2I(10, y), 0, new Vector2I(1, 0));
+            container = new Node2D { Name = "ResourceContainer" };
+            GetNode<Node2D>("World").AddChild(container);
         }
+
+        var prefab = GD.Load<PackedScene>("res://Scenes/World/GatherableResource.tscn");
+        foreach (var point in MapData.ResourcePoints)
+        {
+            var node = prefab.Instantiate<GatherableResource>();
+            node.ItemId = point.ItemId;
+            node.AmountPerGather = point.Amount;
+            node.MaxAmount = point.Amount;
+            node.EnableRespawn = false; // 建筑内搜索点一次性
+            container.AddChild(node);
+            node.GlobalPosition = _grid.GridToWorld(point.Position);
+        }
+    }
+
+    // ============================================================
+    // 存档恢复
+    // ============================================================
+
+    private void RestoreRun()
+    {
+        var sm = SaveManager.Instance;
+        var run = sm?.CurrentRun;
+        if (run == null) return;
+
+        var doctor = GetNodeOrNull<Doctor>("World/Doctor");
+        if (doctor != null)
+        {
+            doctor.RestorePosition(new Vector2(run.DoctorPosX, run.DoctorPosY));
+            doctor.SetHealth(run.DoctorHealth);
+            doctor.SetStamina(run.DoctorStamina);
+        }
+
+        GameManager.Instance?.RestoreState(new SaveState
+        {
+            DayCount = run.DayCount,
+            CurrentPhase = run.CurrentPhase,
+            CurrentState = (int)GameState.Explore,
+        });
+
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is not Operator op) continue;
+            var rt = run.Operators.Find(o => o.OperatorId == op.OperatorDataId);
+            if (rt != null)
+            {
+                op.RestoreFromRuntime(rt);
+            }
+        }
+
+        foreach (var rt in run.Towers)
+        {
+            if (_builder?.TowerPrefabs == null || rt.TowerId < 1 || rt.TowerId > _builder.TowerPrefabs.Length)
+            {
+                continue;
+            }
+
+            var tower = _builder.TowerPrefabs[rt.TowerId - 1].Instantiate<TowerBase>();
+            _builder.TowerContainer.AddChild(tower);
+            tower.GlobalPosition = new Vector2(rt.PosX, rt.PosY);
+            tower.RestoreFromRuntime(rt);
+        }
+
+        sm.RestoreOnGameLoad = false;
+        GD.Print($"[GameWorld] 对局恢复完成 — Day {run.DayCount}, 干员:{run.Operators.Count}, 塔:{run.Towers.Count}");
     }
 }
