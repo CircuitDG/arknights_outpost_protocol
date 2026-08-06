@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="1_doctor"]
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Operator.tscn" id="2_operator"]
+[ext_resource type="Script" path="res://Scripts/TestSaveController.cs" id="3_controller"]
+
+[node name="TestSave" type="Node2D"]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Doctor" parent="World" instance=ExtResource("1_doctor")]
+position = Vector2(64, 64)
+
+[node name="Operator_1" parent="World" instance=ExtResource("2_operator")]
+position = Vector2(96, 96)
+OperatorDataId = 1001
+
+[node name="Label" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 420.0
+offset_bottom = 40.0
+text = "存档系统测试 — 自动化验证中（编辑器内可按 I 查看信息）"
+
+[node name="TestSaveController" type="Node" parent="."]
+script = ExtResource("3_controller")

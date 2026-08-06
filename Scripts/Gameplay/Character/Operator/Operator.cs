@@ -333,6 +333,70 @@ public partial class Operator : BaseEntity
     {
         return $"[{EntityName}] Lv.{_currentLevel} HP:{Health?.CurrentHealth}/{Health?.MaxHealth} 状态:{_state}";
     }
+
+    // ============================================================
+    // 序列化支持
+    // ============================================================
+
+    /// <summary>从运行时数据恢复干员状态</summary>
+    public void RestoreFromRuntime(OperatorRuntime runtime)
+    {
+        if (runtime == null || _data == null) return;
+
+        // 恢复等级和经验（先按等级重算属性，再套用存档血量，避免被 ApplyStats 覆盖）
+        _currentLevel = runtime.CurrentLevel;
+        _currentExp = runtime.CurrentExp;
+        ApplyStats();
+
+        if (Health != null)
+        {
+            Health.CurrentHealth = Math.Min(runtime.CurrentHealth, Health.MaxHealth);
+        }
+
+        // 恢复心情
+        _morale = runtime.Morale;
+
+        // 恢复位置
+        GlobalPosition = new Vector2(runtime.PosX, runtime.PosY);
+
+        // 恢复状态
+        if (runtime.IsInjured)
+        {
+            _state = OperatorState.Down;
+        }
+        else if (runtime.IsFollowing)
+        {
+            _state = OperatorState.Following;
+        }
+        else
+        {
+            _state = OperatorState.Idle;
+        }
+
+        GD.Print($"[{EntityName}] 从存档恢复完成 — Lv.{_currentLevel}, HP:{Health?.CurrentHealth}/{Health?.MaxHealth}");
+    }
+
+    /// <summary>导出为运行时数据</summary>
+    public OperatorRuntime ExportRuntime()
+    {
+        if (_data == null) return null;
+
+        return new OperatorRuntime
+        {
+            OperatorId = _data.Id,
+            CurrentLevel = _currentLevel,
+            CurrentExp = _currentExp,
+            CurrentHealth = Health?.CurrentHealth ?? 0,
+            MaxHealth = Health?.MaxHealth ?? 0,
+            Morale = _morale,
+            PosX = GlobalPosition.X,
+            PosY = GlobalPosition.Y,
+            IsInjured = _state == OperatorState.Down,
+            InjuryDaysLeft = 0, // 后续实现
+            IsFollowing = _state == OperatorState.Following,
+            Trust = 0, // 从 Profile 读取
+        };
+    }
 }
 
 /// <summary>干员状态枚举</summary>

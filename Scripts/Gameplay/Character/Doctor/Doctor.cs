@@ -283,6 +283,28 @@ public partial class Doctor : CharacterBody2D
     }
 
     // ============================================================
+    // 序列化支持
+    // ============================================================
+
+    /// <summary>设置生命值（用于恢复存档）</summary>
+    public void SetHealth(float health)
+    {
+        _currentHealth = Mathf.Clamp(health, 0, MaxHealth);
+    }
+
+    /// <summary>设置体力值（用于恢复存档）</summary>
+    public void SetStamina(float stamina)
+    {
+        _currentStamina = Mathf.Clamp(stamina, 0, MaxStamina);
+    }
+
+    /// <summary>从存档数据恢复位置</summary>
+    public void RestorePosition(Vector2 position)
+    {
+        GlobalPosition = position;
+    }
+
+    // ============================================================
     // 干员指挥
     // ============================================================
 

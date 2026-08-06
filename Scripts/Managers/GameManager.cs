@@ -1,5 +1,6 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Data;
 
 namespace OutpostProtocol.Managers;
 
@@ -252,5 +253,34 @@ public partial class GameManager : Node
     {
         _phaseTimer = CurrentPhaseDuration;
         GD.Print("[GameManager] 跳过阶段");
+    }
+
+    // ============================================================
+    // 存档集成
+    // ============================================================
+
+    /// <summary>获取当前可存档的游戏状态</summary>
+    public SaveState GetSaveState()
+    {
+        return new SaveState
+        {
+            DayCount = _dayCount,
+            CurrentPhase = (int)_currentPhase,
+            CurrentState = (int)_currentState,
+        };
+    }
+
+    /// <summary>从存档恢复游戏状态</summary>
+    public void RestoreState(SaveState state)
+    {
+        if (state == null) return;
+
+        _dayCount = state.DayCount;
+        _currentPhase = (DayPhase)state.CurrentPhase;
+        _currentState = (GameState)state.CurrentState;
+        _phaseTimer = 0;
+        _totalElapsed = 0;
+
+        GD.Print($"[GameManager] 从存档恢复 — Day {_dayCount}, Phase {_currentPhase}, State {_currentState}");
     }
 }
