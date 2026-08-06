@@ -1,6 +1,9 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Gameplay.Character.Operator;
+using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Managers;
+using System.Collections.Generic;
 
 namespace OutpostProtocol.Gameplay.Character.Doctor;
 
@@ -28,6 +31,10 @@ public partial class Doctor : CharacterBody2D
 
     [ExportGroup("生命参数")]
     [Export] public float MaxHealth = 100.0f;
+
+    [ExportGroup("指挥参数")]
+    [Export] public float CommandRange = 500.0f; // 指挥范围
+    [Export] public float AttackCommandRange = 400.0f; // 攻击指挥范围
 
     // ============================================================
     // 运行时状态
@@ -103,6 +110,16 @@ public partial class Doctor : CharacterBody2D
         MoveAndSlide();
 
         // 4. 体力逻辑由 StaminaRegenTimer 驱动
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (_isDead) return;
+
+        if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Right)
+        {
+            HandleRightClick(mouseEvent);
+        }
     }
 
     // ============================================================
@@ -263,5 +280,77 @@ public partial class Doctor : CharacterBody2D
         if (Velocity.Length() < 0.1f) return 0f;
         float maxSpeed = _isSprinting ? SprintSpeed : WalkSpeed;
         return Velocity.Length() / maxSpeed;
+    }
+
+    // ============================================================
+    // 干员指挥
+    // ============================================================
+
+    /// <summary>获取指挥范围内的可用干员</summary>
+    // 注意：类名 Operator 与命名空间 Operator 同名，且当前处于兄弟命名空间 Doctor 下，
+    // 直接写 Operator 会被解析为命名空间，因此这里使用完全限定名。
+    private List<OutpostProtocol.Gameplay.Character.Operator.Operator> GetOperatorsInRange(float range)
+    {
+        var result = new List<OutpostProtocol.Gameplay.Character.Operator.Operator>();
+
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is OutpostProtocol.Gameplay.Character.Operator.Operator op &&
+                !op.IsDead &&
+                op.State != OperatorState.Down &&
+                GlobalPosition.DistanceTo(op.GlobalPosition) <= range)
+            {
+                result.Add(op);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>指挥范围内的干员移动到目标位置</summary>
+    public void CommandMoveTo(Vector2 targetPos)
+    {
+        var operators = GetOperatorsInRange(CommandRange);
+        foreach (var op in operators)
+        {
+            op.MoveToPosition(targetPos);
+        }
+    }
+
+    /// <summary>指挥范围内的干员攻击目标</summary>
+    public void CommandAttack(BaseEntity target)
+    {
+        var operators = GetOperatorsInRange(AttackCommandRange);
+        foreach (var op in operators)
+        {
+            op.AttackTarget(target);
+        }
+    }
+
+    private void HandleRightClick(InputEventMouseButton mouseEvent)
+    {
+        Vector2 worldPos = GetGlobalMousePosition();
+
+        // 检测鼠标下是否有可攻击目标（敌人层 layer 2）
+        var space = GetWorld2D().DirectSpaceState;
+        var query = new PhysicsPointQueryParameters2D
+        {
+            Position = worldPos,
+            CollisionMask = 2u,
+        };
+
+        var results = space.IntersectPoint(query);
+        if (results.Count > 0)
+        {
+            var collider = results[0]["collider"].As<BaseEntity>();
+            if (collider != null && collider.Faction == FactionType.Enemy)
+            {
+                CommandAttack(collider);
+                return;
+            }
+        }
+
+        // 点击地面 → 移动指令
+        CommandMoveTo(worldPos);
     }
 }

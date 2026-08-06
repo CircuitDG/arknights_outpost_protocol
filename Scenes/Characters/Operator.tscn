@@ -1,0 +1,42 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Gameplay/Character/Operator/Operator.cs" id="1_operator"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Entity/Components/HealthComponent.cs" id="2_health"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Entity/Components/MovementComponent.cs" id="3_movement"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Entity/Components/AttackComponent.cs" id="4_attack"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Entity/Components/SkillComponent.cs" id="5_skill"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Character/Operator/OperatorAI.cs" id="6_ai"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_operator"]
+radius = 12.0
+
+[node name="Operator" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("1_operator")
+
+[node name="Sprite2D" type="Polygon2D" parent="."]
+color = Color(0.25, 0.8, 1, 1)
+polygon = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_operator")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="MovementComponent" type="Node2D" parent="."]
+script = ExtResource("3_movement")
+ShowPath = true
+
+[node name="AttackComponent" type="Node" parent="."]
+script = ExtResource("4_attack")
+AttackDamage = 20
+AttackRange = 100.0
+AttackInterval = 1.0
+
+[node name="SkillComponent" type="Node" parent="."]
+script = ExtResource("5_skill")
+
+[node name="OperatorAI" type="Node" parent="."]
+script = ExtResource("6_ai")
