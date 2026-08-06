@@ -23,6 +23,12 @@ public class TowerData
     [JsonPropertyName("attackSpeed")]
     public float AttackSpeed { get; set; }
 
+    [JsonPropertyName("towerType")]
+    public string TowerType { get; set; } = "Ballista"; // Ballista, Gel, Explosion
+
+    [JsonPropertyName("maxDurability")]
+    public int MaxDurability { get; set; } = 100;
+
     [JsonPropertyName("upgradeLevels")]
     public List<TowerUpgradeLevel> UpgradeLevels { get; set; } = new();
 }
@@ -47,6 +53,15 @@ public class TowerUpgradeLevel
     [JsonPropertyName("damageBonus")]
     public int DamageBonus { get; set; }
 
+    [JsonPropertyName("rangeBonus")]
+    public float RangeBonus { get; set; }
+
+    [JsonPropertyName("speedBonus")]
+    public float SpeedBonus { get; set; }
+
     [JsonPropertyName("specialEffect")]
     public string SpecialEffect { get; set; } = string.Empty;
+
+    [JsonPropertyName("specialEffectDescription")]
+    public string SpecialEffectDescription { get; set; } = string.Empty;
 }

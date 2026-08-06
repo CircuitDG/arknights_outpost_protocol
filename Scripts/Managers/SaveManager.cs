@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
+using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Operator;
 using System;
@@ -377,7 +378,16 @@ public partial class SaveManager : Node
             _currentRun.Operators.Add(runtime);
         }
 
-        // 3. 游戏状态
+        // 3. 塔状态
+        _currentRun.Towers.Clear();
+        var towers = GetTowers();
+        foreach (var tower in towers)
+        {
+            if (tower == null) continue;
+            _currentRun.Towers.Add(tower.ExportRuntime());
+        }
+
+        // 4. 游戏状态
         var gameManager = GameManager.Instance;
         if (gameManager != null)
         {
@@ -450,6 +460,28 @@ public partial class SaveManager : Node
             if (node is Operator op)
             {
                 result.Add(op);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>获取所有防御塔（World/TowerContainer 或场景根/TowerContainer）</summary>
+    private List<TowerBase> GetTowers()
+    {
+        var result = new List<TowerBase>();
+        var scene = GetTree().CurrentScene;
+        if (scene == null) return result;
+
+        var container = scene.GetNodeOrNull<Node2D>("World")?.GetNodeOrNull<Node2D>("TowerContainer")
+                        ?? scene.GetNodeOrNull<Node2D>("TowerContainer");
+        if (container == null) return result;
+
+        foreach (var child in container.GetChildren())
+        {
+            if (child is TowerBase tower)
+            {
+                result.Add(tower);
             }
         }
 

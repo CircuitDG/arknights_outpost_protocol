@@ -2,9 +2,11 @@
   {
     "id": 1,
     "name": "弩炮台",
+    "towerType": "Ballista",
     "baseDamage": 20,
-    "attackRange": 8.0,
+    "attackRange": 150,
     "attackSpeed": 1.0,
+    "maxDurability": 100,
     "upgradeLevels": [
       {
         "level": 1,
@@ -12,7 +14,10 @@
         "ironCost": 0,
         "originiumCost": 0,
         "damageBonus": 0,
-        "specialEffect": ""
+        "rangeBonus": 0,
+        "speedBonus": 0,
+        "specialEffect": "",
+        "specialEffectDescription": ""
       },
       {
         "level": 2,
@@ -20,7 +25,10 @@
         "ironCost": 8,
         "originiumCost": 0,
         "damageBonus": 30,
-        "specialEffect": ""
+        "rangeBonus": 10,
+        "speedBonus": 10,
+        "specialEffect": "",
+        "specialEffectDescription": ""
       },
       {
         "level": 3,
@@ -28,7 +36,10 @@
         "ironCost": 20,
         "originiumCost": 2,
         "damageBonus": 30,
-        "specialEffect": "穿透射击"
+        "rangeBonus": 15,
+        "speedBonus": 10,
+        "specialEffect": "piercing_shot",
+        "specialEffectDescription": "20% 概率穿透射击"
       },
       {
         "level": 4,
@@ -36,7 +47,120 @@
         "ironCost": 35,
         "originiumCost": 5,
         "damageBonus": 40,
-        "specialEffect": "穿透射击·强化"
+        "rangeBonus": 20,
+        "speedBonus": 10,
+        "specialEffect": "piercing_shot_enhanced",
+        "specialEffectDescription": "40% 概率穿透射击，伤害不衰减"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "减速凝胶塔",
+    "towerType": "Gel",
+    "baseDamage": 5,
+    "attackRange": 120,
+    "attackSpeed": 0.8,
+    "maxDurability": 80,
+    "upgradeLevels": [
+      {
+        "level": 1,
+        "woodCost": 0,
+        "ironCost": 0,
+        "originiumCost": 0,
+        "damageBonus": 0,
+        "rangeBonus": 0,
+        "speedBonus": 0,
+        "specialEffect": "slow_50",
+        "specialEffectDescription": "减速 50%"
+      },
+      {
+        "level": 2,
+        "woodCost": 20,
+        "ironCost": 10,
+        "originiumCost": 0,
+        "damageBonus": 20,
+        "rangeBonus": 10,
+        "speedBonus": 10,
+        "specialEffect": "slow_55",
+        "specialEffectDescription": "减速 55%"
+      },
+      {
+        "level": 3,
+        "woodCost": 35,
+        "ironCost": 25,
+        "originiumCost": 3,
+        "damageBonus": 20,
+        "rangeBonus": 15,
+        "speedBonus": 10,
+        "specialEffect": "slow_damage",
+        "specialEffectDescription": "减速 60%，每秒 5 点源石伤害"
+      },
+      {
+        "level": 4,
+        "woodCost": 55,
+        "ironCost": 40,
+        "originiumCost": 6,
+        "damageBonus": 30,
+        "rangeBonus": 20,
+        "speedBonus": 10,
+        "specialEffect": "slow_damage_enhanced",
+        "specialEffectDescription": "减速 65%，每秒 15 点源石伤害"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "源石爆裂塔",
+    "towerType": "Explosion",
+    "baseDamage": 30,
+    "attackRange": 100,
+    "attackSpeed": 0.6,
+    "maxDurability": 60,
+    "upgradeLevels": [
+      {
+        "level": 1,
+        "woodCost": 0,
+        "ironCost": 0,
+        "originiumCost": 0,
+        "damageBonus": 0,
+        "rangeBonus": 0,
+        "speedBonus": 0,
+        "specialEffect": "aoe_150",
+        "specialEffectDescription": "范围伤害 150"
+      },
+      {
+        "level": 2,
+        "woodCost": 25,
+        "ironCost": 15,
+        "originiumCost": 2,
+        "damageBonus": 30,
+        "rangeBonus": 10,
+        "speedBonus": 10,
+        "specialEffect": "aoe_180",
+        "specialEffectDescription": "范围伤害 180"
+      },
+      {
+        "level": 3,
+        "woodCost": 40,
+        "ironCost": 30,
+        "originiumCost": 5,
+        "damageBonus": 30,
+        "rangeBonus": 15,
+        "speedBonus": 10,
+        "specialEffect": "aoe_spike",
+        "specialEffectDescription": "爆炸后留下源石地刺，持续 5 秒"
+      },
+      {
+        "level": 4,
+        "woodCost": 60,
+        "ironCost": 45,
+        "originiumCost": 8,
+        "damageBonus": 40,
+        "rangeBonus": 20,
+        "speedBonus": 10,
+        "specialEffect": "aoe_spike_enhanced",
+        "specialEffectDescription": "地刺持续 10 秒，范围扩大 30%"
       }
     ]
   }

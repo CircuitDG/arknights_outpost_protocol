@@ -77,7 +77,7 @@ public partial class BaseEntity : CharacterBody2D
     // ============================================================
 
     /// <summary>受到伤害</summary>
-    public virtual void TakeDamage(int damage, BaseEntity source)
+    public virtual void TakeDamage(int damage, Node2D source)
     {
         if (_isDead) return;
         Health?.Reduce(damage);
