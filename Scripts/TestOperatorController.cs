@@ -103,13 +103,24 @@ public partial class TestOperatorController : Node
             _doctor.CommandAttack(_enemy);
             GD.Print($"[TestOperator] 攻击指令后干员1状态: {_op1.State}, 目标: {_op1.Attack?.CurrentTarget?.EntityName}");
         }
+        else if (_frameCount == 30)
+        {
+            // 技能：选中玫兰莎 → F1 释放攻击强化
+            _doctor.SelectOperator(_op2);
+            bool cast = _doctor.TryCastSkill(1);
+            GD.Print($"[TestOperator] 技能释放: {cast}, 施法中={_op2.Skill?.IsCasting(1)}, 攻击力={_op2.Attack?.AttackDamage}");
+        }
         else if (_frameCount == 70)
         {
             GD.Print($"[TestOperator] 敌人剩余 HP: {_enemy.Health?.CurrentHealth}/{_enemy.Health?.MaxHealth}");
             GD.Print($"[TestOperator] 干员1: {_op1}");
             TestDownReviveLevel();
         }
-        else if (_frameCount >= 80)
+        else if (_frameCount == 120)
+        {
+            GD.Print($"[TestOperator] 技能冷却进度: {_op2.Skill?.GetCooldownProgress(1):F2}, 就绪={_op2.Skill?.IsSkillReady(1)}, 攻击力={_op2.Attack?.AttackDamage}");
+        }
+        else if (_frameCount >= 130)
         {
             GD.Print("[TestOperator] 测试完成");
             GetTree().Quit();

@@ -109,6 +109,22 @@ public partial class EventBus : Node
     public delegate void InventoryChangedEventHandler();
 
     // ============================================================
+    // 9. 技能信号
+    // ============================================================
+
+    /// <summary>技能释放（slot: F1-F4 对应的 1-4）</summary>
+    [Signal]
+    public delegate void SkillCastEventHandler(int slot, string skillId, Node2D caster);
+
+    /// <summary>技能冷却进度更新（progress 0-1）</summary>
+    [Signal]
+    public delegate void SkillCooldownUpdatedEventHandler(int slot, float progress);
+
+    /// <summary>当前选中干员变化</summary>
+    [Signal]
+    public delegate void SelectedOperatorChangedEventHandler(Node2D op);
+
+    // ============================================================
     // 生命周期
     // ============================================================
 
@@ -223,6 +239,24 @@ public partial class EventBus : Node
     public void EmitInventoryChanged()
     {
         EmitSignal(SignalName.InventoryChanged);
+    }
+
+    /// <summary>触发技能释放</summary>
+    public void EmitSkillCast(int slot, string skillId, Node2D caster)
+    {
+        EmitSignal(SignalName.SkillCast, slot, skillId, caster);
+    }
+
+    /// <summary>触发技能冷却更新</summary>
+    public void EmitSkillCooldownUpdated(int slot, float progress)
+    {
+        EmitSignal(SignalName.SkillCooldownUpdated, slot, progress);
+    }
+
+    /// <summary>触发选中干员变化</summary>
+    public void EmitSelectedOperatorChanged(Node2D op)
+    {
+        EmitSignal(SignalName.SelectedOperatorChanged, op);
     }
 }
 

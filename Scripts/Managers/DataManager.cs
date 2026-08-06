@@ -32,6 +32,7 @@ public partial class DataManager : Node
     private readonly Dictionary<int, TowerData> _towerDict = new();
     private readonly Dictionary<int, EnemyWaveData> _waveDict = new();
     private readonly Dictionary<int, ItemData> _itemDict = new();
+    private readonly Dictionary<string, SkillData> _skillDict = new();
 
     // ============================================================
     // 公共访问属性
@@ -42,6 +43,7 @@ public partial class DataManager : Node
     public IReadOnlyDictionary<int, TowerData> Towers => _towerDict;
     public IReadOnlyDictionary<int, EnemyWaveData> Waves => _waveDict;
     public IReadOnlyDictionary<int, ItemData> Items => _itemDict;
+    public IReadOnlyDictionary<string, SkillData> Skills => _skillDict;
 
     // ============================================================
     // 加载状态
@@ -107,12 +109,16 @@ public partial class DataManager : Node
             {
                 foreach (var item in items) _itemDict[item.Id] = item;
             }),
+            LoadDataAsync<SkillData>("res://Data/SkillData.json", items =>
+            {
+                foreach (var item in items) _skillDict[item.Id] = item;
+            }),
         };
 
         await Task.WhenAll(tasks);
 
         _isLoaded = true;
-        GD.Print($"[DataManager] 加载完成 — 干员:{_operatorDict.Count}, 藏品:{_collectionDict.Count}, 塔:{_towerDict.Count}, 波次:{_waveDict.Count}, 物品:{_itemDict.Count}");
+        GD.Print($"[DataManager] 加载完成 — 干员:{_operatorDict.Count}, 藏品:{_collectionDict.Count}, 塔:{_towerDict.Count}, 波次:{_waveDict.Count}, 物品:{_itemDict.Count}, 技能:{_skillDict.Count}");
 
         // 广播加载完成
         EventBus.Instance.EmitLogMessage("DataManager 加载完成", "INFO");
@@ -193,6 +199,12 @@ public partial class DataManager : Node
     public ItemData GetItem(int id)
     {
         return _itemDict.GetValueOrDefault(id);
+    }
+
+    /// <summary>获取技能数据</summary>
+    public SkillData GetSkill(string id)
+    {
+        return _skillDict.GetValueOrDefault(id);
     }
 
     /// <summary>按波次编号获取波次数据</summary>

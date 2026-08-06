@@ -53,6 +53,7 @@ public partial class Doctor : CharacterBody2D
 
     private Timer _staminaRegenTimer;
     private Sprite2D _sprite;
+    private OutpostProtocol.Gameplay.Character.Operator.Operator _selectedOperator;
 
     /// <summary>背包组件</summary>
     public Backpack Backpack { get; private set; }
@@ -131,6 +132,28 @@ public partial class Doctor : CharacterBody2D
         if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Right)
         {
             HandleRightClick(mouseEvent);
+        }
+
+        if (@event is InputEventKey keyEvent && keyEvent.Pressed)
+        {
+            switch (keyEvent.Keycode)
+            {
+                case Key.F1:
+                    TryCastSkill(1);
+                    break;
+                case Key.F2:
+                    TryCastSkill(2);
+                    break;
+                case Key.F3:
+                    TryCastSkill(3);
+                    break;
+                case Key.F4:
+                    TryCastSkill(4);
+                    break;
+                case Key.Tab:
+                    CycleOperator();
+                    break;
+            }
         }
     }
 
@@ -316,6 +339,15 @@ public partial class Doctor : CharacterBody2D
         EmitStaminaChanged();
     }
 
+    /// <summary>消耗体力，成功返回 true</summary>
+    public bool SpendStamina(float amount)
+    {
+        if (_currentStamina < amount) return false;
+        _currentStamina -= amount;
+        EmitStaminaChanged();
+        return true;
+    }
+
     /// <summary>从存档数据恢复位置</summary>
     public void RestorePosition(Vector2 position)
     {
@@ -363,6 +395,73 @@ public partial class Doctor : CharacterBody2D
     private void EmitStaminaChanged()
     {
         EventBus.Instance?.EmitDoctorStaminaChanged(_currentStamina, MaxStamina);
+    }
+
+    // ============================================================
+    // 技能输入
+    // ============================================================
+
+    /// <summary>设置当前选中的干员</summary>
+    public void SelectOperator(OutpostProtocol.Gameplay.Character.Operator.Operator op)
+    {
+        _selectedOperator = op;
+        EventBus.Instance.EmitSelectedOperatorChanged(op);
+        GD.Print($"[Doctor] 选中干员: {op?.EntityName ?? "无"}");
+    }
+
+    /// <summary>轮询切换选中干员（Tab）</summary>
+    public void CycleOperator()
+    {
+        var operators = GetOperatorsInRange(1000f);
+        if (operators.Count == 0) return;
+
+        int currentIndex = operators.IndexOf(_selectedOperator);
+        int nextIndex = (currentIndex + 1) % operators.Count;
+        SelectOperator(operators[nextIndex]);
+    }
+
+    /// <summary>释放当前选中干员的指定槽位技能</summary>
+    public bool TryCastSkill(int slot)
+    {
+        if (_selectedOperator == null || _selectedOperator.IsDead)
+        {
+            GD.Print("[Doctor] 未选中干员或干员已死亡");
+            return false;
+        }
+
+        var skillComp = _selectedOperator.Skill;
+        if (skillComp == null)
+        {
+            GD.Print("[Doctor] 该干员没有技能组件");
+            return false;
+        }
+
+        var skill = skillComp.GetSkill(slot);
+        if (skill == null)
+        {
+            GD.Print($"[Doctor] 槽位 F{slot} 未绑定技能");
+            return false;
+        }
+
+        if (!skillComp.IsSkillReady(slot))
+        {
+            GD.Print($"[Doctor] 技能 F{slot} 不可用");
+            return false;
+        }
+
+        // 消耗博士体力
+        if (skill.StaminaCost > 0 && !SpendStamina(skill.StaminaCost))
+        {
+            GD.Print($"[Doctor] 体力不足，无法释放 {skill.Name}");
+            return false;
+        }
+
+        bool success = skillComp.CastSkill(slot);
+        if (success)
+        {
+            GD.Print($"[Doctor] 释放技能 F{slot} — {skill.Name}");
+        }
+        return success;
     }
 
     // ============================================================

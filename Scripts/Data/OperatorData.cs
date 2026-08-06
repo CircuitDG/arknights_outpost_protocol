@@ -38,6 +38,9 @@ public class OperatorData
     [JsonPropertyName("attackGrowth")]
     public List<int> AttackGrowth { get; set; } = new();
 
+    [JsonPropertyName("skills")]
+    public List<OperatorSkillBinding> Skills { get; set; } = new();
+
     [JsonPropertyName("skillId")]
     public string SkillId { get; set; } = string.Empty;
 

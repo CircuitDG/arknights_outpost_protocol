@@ -1,5 +1,6 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.Gameplay.Character.Operator;
@@ -27,6 +28,13 @@ public partial class HUDController : Node
     private Label _waveLabel;
     private Label _phaseNotice;
 
+    private readonly Control[] _skillSlots = new Control[4];
+    private readonly TextureRect[] _skillIcons = new TextureRect[4];
+    private readonly TextureProgressBar[] _skillCooldowns = new TextureProgressBar[4];
+    private readonly Label[] _skillKeys = new Label[4];
+    private readonly Label[] _skillStatuses = new Label[4];
+    private Operator _selectedOperator;
+
     private TowerBuilder _towerBuilder;
     private EnemySpawner _spawner;
     private Backpack _backpack;
@@ -45,6 +53,18 @@ public partial class HUDController : Node
         _skillLabel = GetNode<Label>("../Root/BottomRightVBox/SkillLabel");
         _waveLabel = GetNode<Label>("../Root/BottomLeftVBox/WaveLabel");
         _phaseNotice = GetNode<Label>("../Root/PhaseNotice");
+
+        // 技能栏（F1-F4）
+        for (int i = 1; i <= 4; i++)
+        {
+            var slot = GetNodeOrNull<Control>($"../Root/BottomRightVBox/SkillBar/SkillSlot_{i}");
+            _skillSlots[i - 1] = slot;
+            if (slot == null) continue;
+            _skillIcons[i - 1] = slot.GetNodeOrNull<TextureRect>("SkillIcon");
+            _skillCooldowns[i - 1] = slot.GetNodeOrNull<TextureProgressBar>("SkillCooldown");
+            _skillKeys[i - 1] = slot.GetNodeOrNull<Label>("SkillKey");
+            _skillStatuses[i - 1] = slot.GetNodeOrNull<Label>("SkillStatus");
+        }
 
         _towerBuilder = GetNodeOrNull<TowerBuilder>("../../TowerBuilder");
         _spawner = GetNodeOrNull<EnemySpawner>("../../EnemySpawner");
@@ -65,8 +85,12 @@ public partial class HUDController : Node
         eb.OperatorLevelUp += OnOperatorChanged;
         eb.OperatorDown += OnOperatorChanged;
         eb.OperatorRevived += OnOperatorChanged;
+        eb.SelectedOperatorChanged += OnSelectedOperatorChanged;
+        eb.SkillCast += OnSkillCast;
+        eb.SkillCooldownUpdated += OnSkillCooldownUpdated;
 
         RefreshAll();
+        RefreshSkillBar();
         GD.Print("[HUD] 初始化完成");
     }
 
@@ -85,6 +109,11 @@ public partial class HUDController : Node
         eb.OperatorLevelUp -= OnOperatorChanged;
         eb.OperatorDown -= OnOperatorChanged;
         eb.OperatorRevived -= OnOperatorChanged;
+        eb.SelectedOperatorChanged -= OnSelectedOperatorChanged;
+        eb.SkillCast -= OnSkillCast;
+        eb.SkillCooldownUpdated -= OnSkillCooldownUpdated;
+
+        UpdateSkillBar(null);
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -181,6 +210,21 @@ public partial class HUDController : Node
         RefreshOperators();
     }
 
+    private void OnSelectedOperatorChanged(Node2D op)
+    {
+        UpdateSkillBar(op as Operator);
+    }
+
+    private void OnSkillCast(int slot, string skillId, Node2D caster)
+    {
+        RefreshSkillBar();
+    }
+
+    private void OnSkillCooldownUpdated(int slot, float progress)
+    {
+        RefreshSkillBar();
+    }
+
     // ============================================================
     // 刷新
     // ============================================================
@@ -237,6 +281,81 @@ public partial class HUDController : Node
             return;
         }
         _waveLabel.Text = $"波次 {_spawner.CurrentWaveNumber} | 活跃:{_spawner.IsWaveActive} | 剩余:{_spawner.GetRemainingEnemies()}";
+    }
+
+    /// <summary>绑定/解绑选中干员的技能事件并刷新技能栏</summary>
+    private void UpdateSkillBar(Operator op)
+    {
+        if (_selectedOperator?.Skill != null)
+        {
+            _selectedOperator.Skill.SkillCasted -= OnLocalSkillCasted;
+            _selectedOperator.Skill.CooldownUpdated -= OnLocalCooldownUpdated;
+            _selectedOperator.Skill.CastStateChanged -= OnLocalCastStateChanged;
+        }
+
+        _selectedOperator = op;
+
+        if (_selectedOperator?.Skill != null)
+        {
+            _selectedOperator.Skill.SkillCasted += OnLocalSkillCasted;
+            _selectedOperator.Skill.CooldownUpdated += OnLocalCooldownUpdated;
+            _selectedOperator.Skill.CastStateChanged += OnLocalCastStateChanged;
+        }
+
+        RefreshSkillBar();
+    }
+
+    private void OnLocalSkillCasted(int slot, SkillData skill)
+    {
+        RefreshSkillBar();
+    }
+
+    private void OnLocalCooldownUpdated(int slot, float progress)
+    {
+        RefreshSkillBar();
+    }
+
+    private void OnLocalCastStateChanged(int slot, bool casting)
+    {
+        RefreshSkillBar();
+    }
+
+    private void RefreshSkillBar()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            var slot = _skillSlots[i];
+            if (slot == null) continue;
+
+            var skillComp = _selectedOperator?.Skill;
+            var skill = skillComp?.GetSkill(i + 1);
+            if (skill == null)
+            {
+                slot.Visible = false;
+                continue;
+            }
+
+            slot.Visible = true;
+
+            if (_skillKeys[i] != null)
+            {
+                _skillKeys[i].Text = $"F{i + 1}";
+            }
+
+            float progress = skillComp.GetCooldownProgress(i + 1);
+            if (_skillCooldowns[i] != null)
+            {
+                _skillCooldowns[i].Value = progress * 100;
+                _skillCooldowns[i].Visible = progress > 0.001f;
+            }
+
+            bool ready = skillComp.IsSkillReady(i + 1);
+            if (_skillStatuses[i] != null)
+            {
+                _skillStatuses[i].Text = ready ? "✓" : "⏳";
+                _skillStatuses[i].Modulate = ready ? Colors.Green : Colors.Orange;
+            }
+        }
     }
 
     private void ShowPhaseNotice(GameState state)

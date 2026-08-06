@@ -78,7 +78,114 @@ offset_right = -12.0
 offset_bottom = -12.0
 
 [node name="SkillLabel" type="Label" parent="Root/BottomRightVBox"]
-text = "技能栏 F1-F4（待接入）"
+text = "技能栏（Tab 切换干员）"
+horizontal_alignment = 2
+
+[node name="SkillBar" type="HBoxContainer" parent="Root/BottomRightVBox"]
+custom_minimum_size = Vector2(220, 70)
+
+[node name="SkillSlot_1" type="Control" parent="Root/BottomRightVBox/SkillBar"]
+custom_minimum_size = Vector2(52, 64)
+
+[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
+offset_right = 48.0
+offset_bottom = 48.0
+
+[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
+offset_right = 48.0
+offset_bottom = 48.0
+max_value = 100.0
+
+[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
+offset_top = 48.0
+offset_right = 24.0
+offset_bottom = 64.0
+text = "F1"
+
+[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
+offset_left = 24.0
+offset_top = 48.0
+offset_right = 52.0
+offset_bottom = 64.0
+text = "✓"
+horizontal_alignment = 2
+
+[node name="SkillSlot_2" type="Control" parent="Root/BottomRightVBox/SkillBar"]
+custom_minimum_size = Vector2(52, 64)
+
+[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
+offset_right = 48.0
+offset_bottom = 48.0
+
+[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
+offset_right = 48.0
+offset_bottom = 48.0
+max_value = 100.0
+
+[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
+offset_top = 48.0
+offset_right = 24.0
+offset_bottom = 64.0
+text = "F2"
+
+[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
+offset_left = 24.0
+offset_top = 48.0
+offset_right = 52.0
+offset_bottom = 64.0
+text = "-"
+horizontal_alignment = 2
+
+[node name="SkillSlot_3" type="Control" parent="Root/BottomRightVBox/SkillBar"]
+custom_minimum_size = Vector2(52, 64)
+
+[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
+offset_right = 48.0
+offset_bottom = 48.0
+
+[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
+offset_right = 48.0
+offset_bottom = 48.0
+max_value = 100.0
+
+[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
+offset_top = 48.0
+offset_right = 24.0
+offset_bottom = 64.0
+text = "F3"
+
+[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
+offset_left = 24.0
+offset_top = 48.0
+offset_right = 52.0
+offset_bottom = 64.0
+text = "-"
+horizontal_alignment = 2
+
+[node name="SkillSlot_4" type="Control" parent="Root/BottomRightVBox/SkillBar"]
+custom_minimum_size = Vector2(52, 64)
+
+[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
+offset_right = 48.0
+offset_bottom = 48.0
+
+[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
+offset_right = 48.0
+offset_bottom = 48.0
+max_value = 100.0
+
+[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
+offset_top = 48.0
+offset_right = 24.0
+offset_bottom = 64.0
+text = "F4"
+
+[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
+offset_left = 24.0
+offset_top = 48.0
+offset_right = 52.0
+offset_bottom = 64.0
+text = "-"
 horizontal_alignment = 2
 
 [node name="BottomLeftVBox" type="VBoxContainer" parent="Root"]

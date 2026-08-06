@@ -1,0 +1,120 @@
+[
+  {
+    "id": "skill_fen_charge",
+    "name": "冲锋号令",
+    "description": "芬吹响号令，全体干员攻速 +30%，持续 5 秒",
+    "iconPath": "res://Assets/Icons/skill_charge.png",
+    "cooldown": 12.0,
+    "staminaCost": 10,
+    "effectType": "Buff",
+    "effectParams": {
+      "attackSpeedBonus": 0.30,
+      "duration": 5.0,
+      "range": 200.0
+    },
+    "targetType": "Area",
+    "targetRange": 200.0,
+    "castTime": 0.5,
+    "animationTrigger": "cast",
+    "vfxPath": "res://Assets/VFX/buff_charge.tscn",
+    "sfxPath": "res://Assets/Audio/skill_charge.wav"
+  },
+  {
+    "id": "skill_melantha_attack",
+    "name": "攻击强化·γ",
+    "description": "玫兰莎攻击力 +50%，持续 4 秒",
+    "iconPath": "res://Assets/Icons/skill_attack.png",
+    "cooldown": 8.0,
+    "staminaCost": 8,
+    "effectType": "Buff",
+    "effectParams": {
+      "attackBonus": 0.50,
+      "duration": 4.0
+    },
+    "targetType": "Self",
+    "targetRange": 0,
+    "castTime": 0.3,
+    "animationTrigger": "cast",
+    "vfxPath": "res://Assets/VFX/buff_attack.tscn",
+    "sfxPath": "res://Assets/Audio/skill_attack.wav"
+  },
+  {
+    "id": "skill_ansel_heal",
+    "name": "战地急救",
+    "description": "安塞尔立即治疗所有友军，恢复 30% 生命值",
+    "iconPath": "res://Assets/Icons/skill_heal.png",
+    "cooldown": 15.0,
+    "staminaCost": 12,
+    "effectType": "Heal",
+    "effectParams": {
+      "healPercent": 0.30,
+      "range": 300.0
+    },
+    "targetType": "Area",
+    "targetRange": 300.0,
+    "castTime": 0.8,
+    "animationTrigger": "cast",
+    "vfxPath": "res://Assets/VFX/heal_area.tscn",
+    "sfxPath": "res://Assets/Audio/skill_heal.wav"
+  },
+  {
+    "id": "skill_kroos_aim",
+    "name": "精准狙击",
+    "description": "克洛丝瞄准最远的敌人，造成 200% 伤害并眩晕 1 秒",
+    "iconPath": "res://Assets/Icons/skill_aim.png",
+    "cooldown": 10.0,
+    "staminaCost": 10,
+    "effectType": "Damage",
+    "effectParams": {
+      "damageMultiplier": 2.0,
+      "stunDuration": 1.0,
+      "range": 400.0
+    },
+    "targetType": "Target",
+    "targetRange": 400.0,
+    "castTime": 1.0,
+    "animationTrigger": "aim",
+    "vfxPath": "res://Assets/VFX/sniper_shot.tscn",
+    "sfxPath": "res://Assets/Audio/skill_sniper.wav"
+  },
+  {
+    "id": "skill_guard_charge",
+    "name": "防御号令",
+    "description": "重装干员防御力 +40%，嘲讽所有敌人，持续 6 秒",
+    "iconPath": "res://Assets/Icons/skill_defense.png",
+    "cooldown": 14.0,
+    "staminaCost": 10,
+    "effectType": "Buff",
+    "effectParams": {
+      "defenseBonus": 0.40,
+      "taunt": 1.0,
+      "duration": 6.0,
+      "range": 150.0
+    },
+    "targetType": "Area",
+    "targetRange": 150.0,
+    "castTime": 0.3,
+    "animationTrigger": "cast",
+    "vfxPath": "res://Assets/VFX/buff_defense.tscn",
+    "sfxPath": "res://Assets/Audio/skill_defense.wav"
+  },
+  {
+    "id": "skill_heal_boost",
+    "name": "治疗强化·α",
+    "description": "医疗干员治疗量 +30%，持续 5 秒",
+    "iconPath": "res://Assets/Icons/skill_heal_boost.png",
+    "cooldown": 10.0,
+    "staminaCost": 6,
+    "effectType": "Buff",
+    "effectParams": {
+      "healBonus": 0.30,
+      "duration": 5.0
+    },
+    "targetType": "Self",
+    "targetRange": 0,
+    "castTime": 0.3,
+    "animationTrigger": "cast",
+    "vfxPath": "res://Assets/VFX/buff_heal.tscn",
+    "sfxPath": "res://Assets/Audio/skill_heal_boost.wav"
+  }
+]
