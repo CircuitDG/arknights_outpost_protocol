@@ -37,6 +37,9 @@ public partial class Doctor : CharacterBody2D
     [Export] public float CommandRange = 500.0f; // 指挥范围
     [Export] public float AttackCommandRange = 400.0f; // 攻击指挥范围
 
+    [ExportGroup("交互配置")]
+    [Export] public float InteractionRange = 60.0f; // E 键交互范围
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -138,6 +141,9 @@ public partial class Doctor : CharacterBody2D
         {
             switch (keyEvent.Keycode)
             {
+                case Key.E:
+                    TryInteract();
+                    break;
                 case Key.F1:
                     TryCastSkill(1);
                     break;
@@ -346,6 +352,36 @@ public partial class Doctor : CharacterBody2D
         _currentStamina -= amount;
         EmitStaminaChanged();
         return true;
+    }
+
+    // ============================================================
+    // 交互（E 键）
+    // ============================================================
+
+    /// <summary>寻找最近的掉落物并拾取（E 键）</summary>
+    public void TryInteract()
+    {
+        LootItem nearest = null;
+        float minDist = float.MaxValue;
+
+        foreach (var node in GetTree().GetNodesInGroup("loot_items"))
+        {
+            if (node is LootItem loot && !loot.IsPickedUp)
+            {
+                float dist = GlobalPosition.DistanceTo(loot.GlobalPosition);
+                if (dist < InteractionRange && dist < minDist)
+                {
+                    minDist = dist;
+                    nearest = loot;
+                }
+            }
+        }
+
+        if (nearest != null)
+        {
+            nearest.ForcePickup(this);
+            GD.Print("[Doctor] 按 E 拾取物品");
+        }
     }
 
     /// <summary>从存档数据恢复位置</summary>

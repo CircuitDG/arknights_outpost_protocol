@@ -34,12 +34,14 @@ position = Vector2(48, 48)
 ItemId = 1
 AmountPerGather = 1
 MaxAmount = 5
+EnableRespawn = true
 
 [node name="Gatherable_2" parent="World" instance=ExtResource("4_resource")]
 position = Vector2(272, 48)
 ItemId = 2
 AmountPerGather = 1
 MaxAmount = 4
+EnableRespawn = true
 
 [node name="TargetPoint" type="Node2D" parent="."]
 position = Vector2(296, 296)

@@ -19,6 +19,11 @@ public partial class GatherableResource : Node2D
     [Export] public int AmountPerGather = 1;
     [Export] public int MaxAmount = 5;
 
+    [ExportGroup("重生配置")]
+    [Export] public bool EnableRespawn = true;
+    [Export] public float RespawnTime = 60.0f; // 重生时间（秒）
+    [Export] public float RespawnOffset = 30.0f; // 重生位置随机偏移
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -27,8 +32,16 @@ public partial class GatherableResource : Node2D
     private Node2D _nearbyPlayer;
     private Area2D _detectionArea;
     private Sprite2D _sprite;
+    private Vector2 _originalPosition;
+    private float _respawnTimer;
+    private bool _isCollected;
+    private bool _isRespawning;
+    private Tween _respawnTween;
 
     public int Remaining => _remaining;
+    public bool IsCollected => _isCollected;
+    public bool IsRespawning => _isRespawning;
+    public float RespawnProgress => _isRespawning && RespawnTime > 0 ? _respawnTimer / RespawnTime : 0f;
 
     // ============================================================
     // 生命周期
@@ -37,8 +50,11 @@ public partial class GatherableResource : Node2D
     public override void _Ready()
     {
         _remaining = MaxAmount;
+        _originalPosition = GlobalPosition;
         _detectionArea = GetNodeOrNull<Area2D>("DetectionArea");
         _sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+
+        AddToGroup("gatherable_resources");
 
         if (_detectionArea != null)
         {
@@ -60,7 +76,19 @@ public partial class GatherableResource : Node2D
 
     public override void _Process(double delta)
     {
-        if (_nearbyPlayer == null || _remaining <= 0) return;
+        float dt = (float)delta;
+
+        // 重生计时
+        if (_isRespawning)
+        {
+            _respawnTimer += dt;
+            if (_respawnTimer >= RespawnTime)
+            {
+                Respawn();
+            }
+        }
+
+        if (_isCollected || _nearbyPlayer == null || _remaining <= 0) return;
 
         if (Input.IsActionJustPressed("interact"))
         {
@@ -75,7 +103,7 @@ public partial class GatherableResource : Node2D
     /// <summary>采集一次（供交互输入与自动化测试调用）</summary>
     public bool Gather()
     {
-        if (_remaining <= 0) return false;
+        if (_isCollected || _isRespawning || _remaining <= 0) return false;
 
         // 优先用检测到的玩家，其次回退到场景中的博士（便于自动化测试）
         var player = _nearbyPlayer ?? GetTree().GetFirstNodeInGroup("doctor") as Node2D;
@@ -86,7 +114,12 @@ public partial class GatherableResource : Node2D
             return false;
         }
 
-        backpack.AddItem(ItemId, AmountPerGather);
+        if (!backpack.AddItem(ItemId, AmountPerGather))
+        {
+            GD.Print("[GatherableResource] 背包已满");
+            return false;
+        }
+
         _remaining = Mathf.Max(0, _remaining - AmountPerGather);
 
         string itemName = DataManager.Instance.GetItem(ItemId)?.Name ?? $"物品{ItemId}";
@@ -94,7 +127,76 @@ public partial class GatherableResource : Node2D
         EventBus.Instance.EmitLogMessage($"采集到 {AmountPerGather} 个 {itemName}", "INFO");
 
         UpdateVisuals();
+
+        // 采空后进入采集/重生状态
+        if (_remaining <= 0)
+        {
+            _isCollected = true;
+            Hide();
+            if (EnableRespawn)
+            {
+                StartRespawn();
+            }
+        }
+
         return true;
+    }
+
+    // ============================================================
+    // 重生
+    // ============================================================
+
+    private void StartRespawn()
+    {
+        _isRespawning = true;
+        _respawnTimer = 0f;
+        GD.Print($"[GatherableResource] 开始重生计时: {RespawnTime}s");
+    }
+
+    private void Respawn()
+    {
+        _isRespawning = false;
+        _respawnTimer = 0f;
+        _isCollected = false;
+        _remaining = MaxAmount;
+
+        // 原地 + 随机偏移
+        GlobalPosition = _originalPosition + new Vector2(
+            (GD.Randf() - 0.5f) * RespawnOffset * 2,
+            (GD.Randf() - 0.5f) * RespawnOffset * 2
+        );
+
+        Show();
+        UpdateVisuals();
+        PlayRespawnAnimation();
+
+        string itemName = DataManager.Instance.GetItem(ItemId)?.Name ?? $"物品{ItemId}";
+        GD.Print($"[GatherableResource] {itemName} 重生 at ({GlobalPosition.X:F0}, {GlobalPosition.Y:F0})");
+        EventBus.Instance.EmitLogMessage($"资源重生: {itemName}", "INFO");
+        EventBus.Instance.EmitResourceRespawned(GlobalPosition, ItemId);
+    }
+
+    /// <summary>强制重生（调试/测试用）</summary>
+    public void ForceRespawn()
+    {
+        if (!_isCollected) return;
+        _isRespawning = false;
+        Respawn();
+    }
+
+    private void PlayRespawnAnimation()
+    {
+        if (_sprite == null) return;
+
+        _sprite.Modulate = Colors.Transparent;
+        _respawnTween?.Kill();
+        _respawnTween = CreateTween();
+        _respawnTween.SetEase(Tween.EaseType.Out);
+        _respawnTween.TweenProperty(_sprite, "modulate", Colors.White, 0.5f);
+
+        Scale = new Vector2(0.5f, 0.5f);
+        _respawnTween.Parallel();
+        _respawnTween.TweenProperty(this, "scale", Vector2.One, 0.5f);
     }
 
     // ============================================================

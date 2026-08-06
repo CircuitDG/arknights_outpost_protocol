@@ -138,6 +138,18 @@ public partial class EventBus : Node
     public delegate void BuffRemovedEventHandler(string buffId, BuffType type, Node2D target);
 
     // ============================================================
+    // 11. 掉落/重生信号
+    // ============================================================
+
+    /// <summary>掉落物被拾取</summary>
+    [Signal]
+    public delegate void LootPickedUpEventHandler(int itemId, int quantity);
+
+    /// <summary>资源点重生</summary>
+    [Signal]
+    public delegate void ResourceRespawnedEventHandler(Vector2 position, int itemId);
+
+    // ============================================================
     // 生命周期
     // ============================================================
 
@@ -282,6 +294,18 @@ public partial class EventBus : Node
     public void EmitBuffRemoved(string buffId, BuffType type, Node2D target)
     {
         EmitSignal(SignalName.BuffRemoved, buffId, (int)type, target);
+    }
+
+    /// <summary>触发掉落物拾取</summary>
+    public void EmitLootPickedUp(int itemId, int quantity)
+    {
+        EmitSignal(SignalName.LootPickedUp, itemId, quantity);
+    }
+
+    /// <summary>触发资源点重生</summary>
+    public void EmitResourceRespawned(Vector2 position, int itemId)
+    {
+        EmitSignal(SignalName.ResourceRespawned, position, itemId);
     }
 }
 

@@ -18,4 +18,7 @@ public class ItemData
 
     [JsonPropertyName("maxStack")]
     public int MaxStack { get; set; } = 99;
+
+    [JsonPropertyName("iconPath")]
+    public string IconPath { get; set; } = string.Empty;
 }

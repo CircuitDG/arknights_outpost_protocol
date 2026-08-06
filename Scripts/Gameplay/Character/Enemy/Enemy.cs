@@ -2,6 +2,7 @@ using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Entity.Components;
+using OutpostProtocol.Gameplay.Inventory;
 
 namespace OutpostProtocol.Gameplay.Character.Enemy;
 
@@ -24,6 +25,9 @@ public partial class Enemy : BaseEntity
     [Export] public int ExpReward = 10;
     [Export] public int ResourceReward = 5; // 掉落物资
     [Export] public int ResourceItemId = 1; // 掉落物品 ID（默认木材）
+
+    /// <summary>掉落物预制体（未设置时只走背包直发逻辑）</summary>
+    [Export] public PackedScene LootScene;
 
     // ============================================================
     // 运行时状态
@@ -203,8 +207,30 @@ public partial class Enemy : BaseEntity
     {
         base.OnHealthDepleted();
 
+        // 生成场景掉落物
+        SpawnLoot();
+
         // 广播敌人死亡（用于波次计数）
         EventBus.Instance.EmitLogMessage($"{EntityName} 被击杀", "INFO");
+    }
+
+    private void SpawnLoot()
+    {
+        if (LootScene == null)
+        {
+            GD.Print($"[{EntityName}] 未设置掉落物预制体");
+            return;
+        }
+
+        var loot = LootScene.Instantiate<LootItem>();
+        if (loot == null) return;
+
+        loot.GlobalPosition = GlobalPosition;
+        GetTree().CurrentScene.AddChild(loot);
+        loot.GlobalPosition = GlobalPosition;
+        loot.SetLoot(ResourceItemId > 0 ? ResourceItemId : 1, ResourceReward > 0 ? ResourceReward : 1);
+
+        GD.Print($"[{EntityName}] 掉落 {loot.Data?.Name ?? "物品"} x{ResourceReward}");
     }
 
     // ============================================================
