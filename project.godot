@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 MCPRuntimeProbe="*uid://bsg12huaf1u5i"
 EventBus="*res://Scripts/Core/EventBus/EventBus.cs"
 GameManager="*res://Scripts/Managers/GameManager.cs"
+DataManager="*res://Scripts/Managers/DataManager.cs"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]

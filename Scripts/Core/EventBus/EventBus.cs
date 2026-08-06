@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 namespace OutpostProtocol.Core.EventBus;
 
@@ -208,16 +207,4 @@ public enum DayPhase
     Afternoon,
     Dusk,
     Night,
-}
-
-/// <summary>
-/// 藏品数据占位类（后续由 Data/CollectionData.cs 正式实现，
-/// 信号中统一使用 int Id 传递）。
-/// </summary>
-public class CollectionData
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Rarity { get; set; }
-    public string Effect { get; set; }
 }

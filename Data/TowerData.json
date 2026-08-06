@@ -1,0 +1,43 @@
+[
+  {
+    "id": 1,
+    "name": "弩炮台",
+    "baseDamage": 20,
+    "attackRange": 8.0,
+    "attackSpeed": 1.0,
+    "upgradeLevels": [
+      {
+        "level": 1,
+        "woodCost": 0,
+        "ironCost": 0,
+        "originiumCost": 0,
+        "damageBonus": 0,
+        "specialEffect": ""
+      },
+      {
+        "level": 2,
+        "woodCost": 15,
+        "ironCost": 8,
+        "originiumCost": 0,
+        "damageBonus": 30,
+        "specialEffect": ""
+      },
+      {
+        "level": 3,
+        "woodCost": 30,
+        "ironCost": 20,
+        "originiumCost": 2,
+        "damageBonus": 30,
+        "specialEffect": "穿透射击"
+      },
+      {
+        "level": 4,
+        "woodCost": 50,
+        "ironCost": 35,
+        "originiumCost": 5,
+        "damageBonus": 40,
+        "specialEffect": "穿透射击·强化"
+      }
+    ]
+  }
+]

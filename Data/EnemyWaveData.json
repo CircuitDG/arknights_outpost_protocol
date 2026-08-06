@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "waveNumber": 1,
+    "enemyTypes": [
+      {
+        "enemyId": 1,
+        "count": 5,
+        "spawnInterval": 1.5,
+        "spawnPoint": "Edge"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "waveNumber": 2,
+    "enemyTypes": [
+      {
+        "enemyId": 1,
+        "count": 8,
+        "spawnInterval": 1.2,
+        "spawnPoint": "Edge"
+      },
+      {
+        "enemyId": 2,
+        "count": 3,
+        "spawnInterval": 2.0,
+        "spawnPoint": "Edge"
+      }
+    ]
+  }
+]

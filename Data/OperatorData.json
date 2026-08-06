@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1001,
+    "name": "芬",
+    "classType": "Vanguard",
+    "baseHp": 120,
+    "baseAttack": 35,
+    "baseDefense": 20,
+    "maxLevel": 6,
+    "lvUpExpCurve": [0, 100, 250, 450, 700, 1000],
+    "hpGrowth": [0, 12, 14, 16, 18, 20],
+    "attackGrowth": [0, 3, 4, 5, 6, 7],
+    "skillId": "skill_fen_charge",
+    "passive1Id": "passive_fen_charge_enhance",
+    "passive2Id": "passive_fen_frontline_supply"
+  },
+  {
+    "id": 1002,
+    "name": "玫兰莎",
+    "classType": "Guard",
+    "baseHp": 100,
+    "baseAttack": 45,
+    "baseDefense": 15,
+    "maxLevel": 6,
+    "lvUpExpCurve": [0, 100, 250, 450, 700, 1000],
+    "hpGrowth": [0, 10, 12, 14, 16, 18],
+    "attackGrowth": [0, 4, 5, 6, 7, 8],
+    "skillId": "skill_melantha_attack",
+    "passive1Id": "passive_melantha_night_hunter",
+    "passive2Id": "passive_melantha_originium_affinity"
+  },
+  {
+    "id": 1003,
+    "name": "安塞尔",
+    "classType": "Medic",
+    "baseHp": 80,
+    "baseAttack": 20,
+    "baseDefense": 10,
+    "maxLevel": 6,
+    "lvUpExpCurve": [0, 100, 250, 450, 700, 1000],
+    "hpGrowth": [0, 8, 10, 12, 14, 16],
+    "attackGrowth": [0, 2, 3, 4, 5, 6],
+    "skillId": "skill_ansel_heal",
+    "passive1Id": "passive_ansel_field_medic",
+    "passive2Id": "passive_ansel_long_range_support"
+  }
+]
