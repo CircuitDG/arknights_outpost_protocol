@@ -29,11 +29,11 @@ public partial class TestSettlementController : Node
 
         if (_frameCount == 60)
         {
-            GD.Print($"[TestSettlement] 休整期: Day={GameManager.Instance.DayCount}, 面板可见={_panel.Visible}");
+            GD.Print($"[TestSettlement] 休整期: Day={GameManager.Instance.DayCount}, 面板可见={_panel.Visible}, 天赋点总计={SaveManager.Instance?.Profile?.TotalTalentPoints}, WaveLevel={GameManager.Instance.WaveLevel}");
         }
         else if (_frameCount == 250)
         {
-            GD.Print($"[TestSettlement] 自动继续后: Day={GameManager.Instance.DayCount}, State={GameManager.Instance.CurrentState}, 面板可见={_panel.Visible}");
+            GD.Print($"[TestSettlement] 自动继续后: Day={GameManager.Instance.DayCount}, State={GameManager.Instance.CurrentState}, 面板可见={_panel.Visible}, WaveLevel={GameManager.Instance.WaveLevel}");
         }
         else if (_frameCount >= 260)
         {

@@ -7,7 +7,9 @@
         "enemyId": 1,
         "count": 5,
         "spawnInterval": 1.5,
-        "spawnPoint": "Edge"
+        "spawnPoint": "Edge",
+        "expReward": 5,
+        "resourceReward": 2
       }
     ]
   },
@@ -19,13 +21,53 @@
         "enemyId": 1,
         "count": 8,
         "spawnInterval": 1.2,
-        "spawnPoint": "Edge"
+        "spawnPoint": "Edge",
+        "expReward": 7,
+        "resourceReward": 3
       },
       {
         "enemyId": 2,
         "count": 3,
         "spawnInterval": 2.0,
-        "spawnPoint": "Edge"
+        "spawnPoint": "Edge",
+        "expReward": 15,
+        "resourceReward": 5
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "waveNumber": 3,
+    "enemyTypes": [
+      {
+        "enemyId": 1,
+        "count": 6,
+        "spawnInterval": 1.2,
+        "spawnPoint": "Edge",
+        "expReward": 8,
+        "resourceReward": 3
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "waveNumber": 4,
+    "enemyTypes": [
+      {
+        "enemyId": 1,
+        "count": 8,
+        "spawnInterval": 1.0,
+        "spawnPoint": "Edge",
+        "expReward": 10,
+        "resourceReward": 4
+      },
+      {
+        "enemyId": 2,
+        "count": 1,
+        "spawnInterval": 2.0,
+        "spawnPoint": "Edge",
+        "expReward": 25,
+        "resourceReward": 8
       }
     ]
   }

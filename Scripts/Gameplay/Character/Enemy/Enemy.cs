@@ -201,6 +201,7 @@ public partial class Enemy : BaseEntity
         // 攻击后延迟再攻击（避免刷屏，核心自身也有伤害冷却）
         GetTree().CreateTimer(1.0f).Timeout += () =>
         {
+            if (IsDead) return; // 敌人已死亡，停止攻击循环
             _isAttackingCore = false;
             if (_targetCore != null && !_targetCore.IsDestroyed)
             {

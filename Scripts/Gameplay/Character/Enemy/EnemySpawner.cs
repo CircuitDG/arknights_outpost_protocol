@@ -4,6 +4,7 @@ using OutpostProtocol.Core.Grid;
 using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Managers;
+using System;
 using System.Collections.Generic;
 
 namespace OutpostProtocol.Gameplay.Character.Enemy;
@@ -30,6 +31,10 @@ public partial class EnemySpawner : Node
     [ExportGroup("调试")]
     [Export] public bool AutoStartWaves = true; // 是否自动开始波次
     [Export] public bool ShowDebugLogs = true;
+
+    [ExportGroup("波次难度")]
+    [Export] public bool UseWaveLevel = true; // 是否使用 GameManager.WaveLevel
+    [Export] public int BaseWaveNumber = 1;
 
     // ============================================================
     // 运行时状态
@@ -137,15 +142,19 @@ public partial class EnemySpawner : Node
             return;
         }
 
+        // 计算有效波次号（受难度影响）
+        int effectiveWave = UseWaveLevel ? GetEffectiveWaveNumber() : waveNumber;
+
         // 加载波次配置
-        var waveData = DataManager.Instance.GetWaveByNumber(waveNumber);
+        var waveData = DataManager.Instance.GetWaveByNumber(effectiveWave);
         if (waveData == null)
         {
-            GD.PushError($"[EnemySpawner] 未找到波次配置: {waveNumber}");
+            GD.Print($"[EnemySpawner] 未找到波次 {effectiveWave} 配置，动态生成");
+            GenerateDynamicWave(effectiveWave);
             return;
         }
 
-        _currentWaveNumber = waveNumber;
+        _currentWaveNumber = effectiveWave;
         _enemiesSpawned = 0;
         _enemiesKilled = 0;
         _spawnTimer = 0;
@@ -164,11 +173,66 @@ public partial class EnemySpawner : Node
         _isWaveActive = true;
         _isSpawning = true;
 
-        GD.Print($"[EnemySpawner] 波次 {waveNumber} 开始 — 总计 {_totalEnemiesInWave} 个敌人");
+        GD.Print($"[EnemySpawner] 波次 {effectiveWave} 开始 — 总计 {_totalEnemiesInWave} 个敌人");
 
         // 广播波次开始
-        EventBus.Instance.EmitWaveStarted(waveNumber);
-        EventBus.Instance.EmitLogMessage($"波次 {waveNumber} 开始！{_totalEnemiesInWave} 个敌人来袭", "WARN");
+        EventBus.Instance.EmitWaveStarted(effectiveWave);
+        EventBus.Instance.EmitLogMessage($"波次 {effectiveWave} 开始！{_totalEnemiesInWave} 个敌人来袭", "WARN");
+    }
+
+    /// <summary>获取受难度影响的波次编号</summary>
+    private int GetEffectiveWaveNumber()
+    {
+        if (GameManager.Instance == null) return _currentWaveNumber;
+        return Math.Max(1, GameManager.Instance.WaveLevel);
+    }
+
+    /// <summary>动态生成波次（配置不存在时按等级生成）</summary>
+    private void GenerateDynamicWave(int waveLevel)
+    {
+        _currentWaveNumber = waveLevel;
+        _enemiesSpawned = 0;
+        _enemiesKilled = 0;
+        _spawnTimer = 0;
+
+        // 按等级计算敌人数量
+        int enemyCount = 3 + waveLevel * 2; // 3, 5, 7, 9...
+        int eliteCount = Math.Max(0, waveLevel / 3); // 每 3 级出 1 个精英
+
+        _pendingSpawns.Clear();
+
+        var normal = new EnemySpawnConfig
+        {
+            EnemyId = 1,
+            Count = enemyCount,
+            SpawnInterval = Math.Max(0.5f, 2.0f - waveLevel * 0.05f),
+            SpawnPoint = "Edge",
+            ExpReward = 5 + waveLevel,
+            ResourceReward = 2 + waveLevel / 2,
+        };
+        for (int i = 0; i < normal.Count; i++) _pendingSpawns.Add(normal);
+
+        if (eliteCount > 0)
+        {
+            var elite = new EnemySpawnConfig
+            {
+                EnemyId = 2,
+                Count = eliteCount,
+                SpawnInterval = 3.0f,
+                SpawnPoint = "Edge",
+                ExpReward = 20 + waveLevel * 2,
+                ResourceReward = 5 + waveLevel,
+            };
+            for (int i = 0; i < elite.Count; i++) _pendingSpawns.Add(elite);
+        }
+
+        _totalEnemiesInWave = _pendingSpawns.Count;
+        _isWaveActive = true;
+        _isSpawning = true;
+
+        GD.Print($"[EnemySpawner] 动态生成波次 {waveLevel}: {_totalEnemiesInWave} 个敌人 (精英 x{eliteCount})");
+        EventBus.Instance.EmitWaveStarted(waveLevel);
+        EventBus.Instance.EmitLogMessage($"波次 {waveLevel} 开始！{_totalEnemiesInWave} 个敌人来袭", "WARN");
     }
 
     /// <summary>开始下一波</summary>

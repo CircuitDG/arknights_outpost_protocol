@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
+using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Entity;
@@ -232,5 +233,43 @@ public partial class DailyStatsManager : Node
     public int GetOperatorExpGained(int operatorId)
     {
         return _currentStats.OperatorExpGained.GetValueOrDefault(operatorId, 0);
+    }
+
+    // ============================================================
+    // 天赋点计算
+    // ============================================================
+
+    /// <summary>计算当天获得的天赋点</summary>
+    public int CalculateTalentPoints()
+    {
+        if (_currentStats == null) return 0;
+
+        int points = 1; // 基础奖励：存活 1 天 → +1
+
+        if (_currentStats.WavesCleared >= 3) points += 1; // 清波 ≥3
+
+        var core = GetOutpostCore();
+        if (core != null && !core.IsDestroyed && core.HealthPercent >= 0.8f) points += 1; // 核心 ≥80%
+
+        if (_currentStats.TotalKills >= 10) points += 1; // 击杀 ≥10
+
+        return points;
+    }
+
+    private OutpostCore GetOutpostCore()
+    {
+        var core = GetTree().GetFirstNodeInGroup("outpost_core") as OutpostCore;
+        if (core != null) return core;
+
+        var world = GetTree().CurrentScene?.GetNodeOrNull<Node2D>("World");
+        if (world == null) return null;
+
+        core = world.GetNodeOrNull<OutpostCore>("OutpostCore");
+        if (core == null)
+        {
+            var target = world.GetNodeOrNull<Node2D>("TargetPoint");
+            core = target?.GetNodeOrNull<OutpostCore>("OutpostCore");
+        }
+        return core;
     }
 }

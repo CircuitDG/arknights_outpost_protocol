@@ -26,19 +26,30 @@ public partial class TestCoreController : Node
 
         if (_frameCount == 5)
         {
-            // 敌人贴近核心（距离 16 < 30），下达目标指令
+            // 敌人贴近核心（距离 16 < 30），下达目标指令；同时手动打掉 40 血测试休整修复
             if (_enemy != null && _core != null)
             {
                 _enemy.SetTargetPosition(_core.GlobalPosition);
+                _core.TakeDamage(40);
             }
             else
             {
                 GD.PrintErr("[TestCore] 节点引用为空");
             }
         }
+        else if (_frameCount == 8 || _frameCount == 11 || _frameCount == 14)
+        {
+            // 快速推进到休整期（Explore→Build→Battle→Rest），验证自动修复
+            GameManager.Instance.SkipCurrentPhase();
+        }
         else if (_frameCount == 20)
         {
-            GD.Print($"[TestCore] 敌人攻击后核心 HP: {_core?.CurrentHealth}/{_core?.MaxHealth}（应为 90）");
+            GD.Print($"[TestCore] 休整修复后核心 HP: {_core?.CurrentHealth}/{_core?.MaxHealth}（应为 100）, Day={GameManager.Instance.DayCount}");
+        }
+        else if (_frameCount == 25)
+        {
+            // 清除敌人，避免其后续攻击干扰摧毁测试
+            _enemy?.TakeDamage(99999, null);
         }
         else if (_frameCount == 200)
         {

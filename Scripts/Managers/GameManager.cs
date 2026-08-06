@@ -44,6 +44,14 @@ public partial class GameManager : Node
     [ExportGroup("结算配置")]
     [Export] public PackedScene SettlementPanelPrefab;
 
+    [ExportGroup("休整期修复")]
+    [Export] public bool AutoRepairCore = true;
+    [Export] public float RepairPercentPerRest = 0.5f; // 每次休整恢复 50%
+
+    [ExportGroup("波次难度")]
+    [Export] public int WaveLevel { get; set; } = 1;
+    [Export] public int WaveLevelPerDay = 1; // 每天增加 1
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -55,6 +63,7 @@ public partial class GameManager : Node
     private int _dayCount = 1;
     private EnemySpawner _enemySpawner;
     private SettlementPanelController _settlementPanel;
+    private OutpostCore _outpostCore;
     private GameOverReason _gameOverReason = GameOverReason.DoctorDied;
 
     /// <summary>游戏结束原因</summary>
@@ -237,6 +246,18 @@ public partial class GameManager : Node
         var oldState = _currentState;
         _currentState = newState;
 
+        // 进入休整期 → 自动修复核心
+        if (newState == GameState.Rest)
+        {
+            RepairCoreOnRest();
+        }
+
+        // 新的一天 → 波次难度提升
+        if (newState == GameState.Explore && _dayCount > 1)
+        {
+            IncreaseWaveLevel();
+        }
+
         // 更新对应的 DayPhase（方便 UI 显示）
         UpdateDayPhaseForState(newState);
 
@@ -244,6 +265,58 @@ public partial class GameManager : Node
         EventBus.Instance.EmitGameStateChanged(newState);
 
         GD.Print($"[GameManager] 状态切换: {oldState} → {newState} (Phase: {_currentPhase})");
+    }
+
+    // ============================================================
+    // 休整期核心修复
+    // ============================================================
+
+    private void RepairCoreOnRest()
+    {
+        if (!AutoRepairCore) return;
+
+        if (_outpostCore == null)
+        {
+            _outpostCore = GetOutpostCore();
+            if (_outpostCore == null) return;
+        }
+
+        if (_outpostCore.IsDestroyed) return;
+
+        int repairAmount = (int)(_outpostCore.MaxHealth * RepairPercentPerRest);
+        int actualRepair = _outpostCore.Repair(repairAmount);
+        if (actualRepair > 0)
+        {
+            GD.Print($"[GameManager] 休整期修复核心 +{actualRepair} HP");
+        }
+    }
+
+    private OutpostCore GetOutpostCore()
+    {
+        var core = GetTree().GetFirstNodeInGroup("outpost_core") as OutpostCore;
+        if (core != null) return core;
+
+        var world = GetTree().CurrentScene?.GetNodeOrNull<Node2D>("World");
+        if (world == null) return null;
+
+        core = world.GetNodeOrNull<OutpostCore>("OutpostCore");
+        if (core == null)
+        {
+            var target = world.GetNodeOrNull<Node2D>("TargetPoint");
+            core = target?.GetNodeOrNull<OutpostCore>("OutpostCore");
+        }
+        return core;
+    }
+
+    // ============================================================
+    // 波次难度
+    // ============================================================
+
+    private void IncreaseWaveLevel()
+    {
+        WaveLevel += WaveLevelPerDay;
+        GD.Print($"[GameManager] 波次难度提升: Level {WaveLevel}");
+        EventBus.Instance.EmitLogMessage($"波次难度提升至 Lv.{WaveLevel}", "INFO");
     }
 
     /// <summary>根据游戏状态更新昼夜阶段显示</summary>

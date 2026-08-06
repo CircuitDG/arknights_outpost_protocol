@@ -114,7 +114,14 @@ public partial class TestEnemyController : Node
         {
             ShowStatus();
         }
-        else if (_frameCount >= 120)
+        else if (_frameCount == 120)
+        {
+            // 动态波次：WaveLevel=5 无配置 → 动态生成（3+5*2=13 普通 + 1 精英）
+            GameManager.Instance.WaveLevel = 5;
+            _spawner.StartWave(5);
+            GD.Print($"[TestEnemy] 动态波次: 总数={_spawner.TotalEnemiesInWave}, 活跃={_spawner.IsWaveActive}");
+        }
+        else if (_frameCount >= 130)
         {
             GD.Print("[TestEnemy] 测试完成");
             GetTree().Quit();

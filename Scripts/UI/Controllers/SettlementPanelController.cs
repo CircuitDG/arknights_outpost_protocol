@@ -36,6 +36,9 @@ public partial class SettlementPanelController : Control
     private Label _autoContinueLabel;
     private Label _coreHealthLabel;
     private Label _coreStatusLabel;
+    private Label _talentPointsLabel;
+    private Label _waveLevelLabel;
+    private int _earnedTalentPoints;
 
     // ============================================================
     // 运行时状态
@@ -62,6 +65,8 @@ public partial class SettlementPanelController : Control
         _autoContinueLabel = GetNodeOrNull<Label>("Panel/MainContainer/ButtonContainer/AutoContinueLabel");
         _coreHealthLabel = GetNodeOrNull<Label>("Panel/MainContainer/CoreHealthLabel");
         _coreStatusLabel = GetNodeOrNull<Label>("Panel/MainContainer/CoreStatusLabel");
+        _talentPointsLabel = GetNodeOrNull<Label>("Panel/MainContainer/TalentPointsLabel");
+        _waveLevelLabel = GetNodeOrNull<Label>("Panel/MainContainer/WaveLevelLabel");
 
         Hide();
 
@@ -139,6 +144,8 @@ public partial class SettlementPanelController : Control
         _autoTimer = AutoContinueDelay;
 
         UpdateUI();
+        UpdateTalentPoints();
+        UpdateWaveLevel();
         Show();
 
         GD.Print("[SettlementPanel] 结算面板已显示");
@@ -212,6 +219,41 @@ public partial class SettlementPanelController : Control
         {
             _coreHealthLabel.Text = $"核心: {core.CurrentHealth}/{core.MaxHealth}";
         }
+    }
+
+    // ============================================================
+    // 天赋点 / 波次等级
+    // ============================================================
+
+    private void UpdateTalentPoints()
+    {
+        _earnedTalentPoints = DailyStatsManager.Instance?.CalculateTalentPoints() ?? 0;
+
+        if (_talentPointsLabel != null)
+        {
+            _talentPointsLabel.Text = $"🏆 获得天赋点: +{_earnedTalentPoints}";
+            _talentPointsLabel.Visible = _earnedTalentPoints > 0;
+        }
+
+        if (_earnedTalentPoints > 0)
+        {
+            var profile = SaveManager.Instance?.Profile;
+            if (profile != null)
+            {
+                profile.TotalTalentPoints += _earnedTalentPoints;
+                SaveManager.Instance.SaveProfile();
+                GD.Print($"[SettlementPanel] 获得 {_earnedTalentPoints} 天赋点，总计 {profile.TotalTalentPoints}");
+            }
+        }
+    }
+
+    private void UpdateWaveLevel()
+    {
+        var gm = GameManager.Instance;
+        if (gm == null || _waveLevelLabel == null) return;
+
+        _waveLevelLabel.Text = $"波次等级: Lv.{gm.WaveLevel}";
+        _waveLevelLabel.Visible = true;
     }
 
     private void UpdateResourceList()
