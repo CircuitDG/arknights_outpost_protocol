@@ -14,6 +14,7 @@ public partial class MainMenuController : Control
     private Button _settingsButton;
     private Button _quitButton;
     private Label _versionLabel;
+    private Control _settingsPanel;
 
     private const string GameScenePath = "res://Scenes/Main.tscn";
 
@@ -24,6 +25,7 @@ public partial class MainMenuController : Control
         _settingsButton = GetNodeOrNull<Button>("CenterContainer/MenuContainer/SettingsButton");
         _quitButton = GetNodeOrNull<Button>("CenterContainer/MenuContainer/QuitButton");
         _versionLabel = GetNodeOrNull<Label>("CenterContainer/MenuContainer/VersionLabel");
+        _settingsPanel = GetNodeOrNull<Control>("SettingsPanel");
 
         if (_newGameButton != null) _newGameButton.Pressed += OnNewGamePressed;
         if (_continueButton != null) _continueButton.Pressed += OnContinuePressed;
@@ -86,8 +88,11 @@ public partial class MainMenuController : Control
 
     private void OnSettingsPressed()
     {
-        GD.Print("[MainMenu] 设置（占位）");
-        ShowMessage("设置", "设置功能开发中...");
+        GD.Print("[MainMenu] 打开设置");
+        if (_settingsPanel != null)
+        {
+            _settingsPanel.Show();
+        }
     }
 
     private void OnQuitPressed()
