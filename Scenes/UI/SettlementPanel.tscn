@@ -1,0 +1,73 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/SettlementPanelController.cs" id="1_settlement"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0, 0, 0, 0.75)
+
+[node name="SettlementPanel" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_settlement")
+visible = false
+
+[node name="Panel" type="Panel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="MainContainer" type="VBoxContainer" parent="Panel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -170.0
+offset_right = 240.0
+offset_bottom = 170.0
+
+[node name="Title" type="Label" parent="Panel/MainContainer"]
+text = "📊 今日结算"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+[node name="DayLabel" type="Label" parent="Panel/MainContainer"]
+text = "第 1 天"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Panel/MainContainer"]
+
+[node name="KillsLabel" type="Label" parent="Panel/MainContainer"]
+text = "击杀: 0"
+
+[node name="ExpLabel" type="Label" parent="Panel/MainContainer"]
+text = "获得经验: 0"
+
+[node name="HSeparator2" type="HSeparator" parent="Panel/MainContainer"]
+
+[node name="ResourceTitle" type="Label" parent="Panel/MainContainer"]
+text = "持有资源:"
+
+[node name="ResourceContainer" type="VBoxContainer" parent="Panel/MainContainer"]
+
+[node name="HSeparator3" type="HSeparator" parent="Panel/MainContainer"]
+
+[node name="OperatorTitle" type="Label" parent="Panel/MainContainer"]
+text = "干员状态:"
+
+[node name="OperatorContainer" type="VBoxContainer" parent="Panel/MainContainer"]
+
+[node name="HSeparator4" type="HSeparator" parent="Panel/MainContainer"]
+
+[node name="ButtonContainer" type="HBoxContainer" parent="Panel/MainContainer"]
+alignment = 1
+
+[node name="ContinueButton" type="Button" parent="Panel/MainContainer/ButtonContainer"]
+text = "继续"
+
+[node name="AutoContinueLabel" type="Label" parent="Panel/MainContainer/ButtonContainer"]
+text = "自动继续: 5s"
+
+[node name="BonusLabel" type="Label" parent="Panel/MainContainer"]
+text = "奖励: 天赋点 +1"
+horizontal_alignment = 1

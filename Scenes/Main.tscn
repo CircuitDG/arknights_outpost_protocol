@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://Scripts/GameWorldController.cs" id="1_world"]
 [ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="2_doctor"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/HUD.tscn" id="6_hud"]
 [ext_resource type="Script" path="res://Scripts/Gameplay/Building/TowerBuilder.cs" id="7_builder"]
 [ext_resource type="Script" path="res://Scripts/Gameplay/Character/Enemy/EnemySpawner.cs" id="8_spawner"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SettlementPanel.tscn" id="9_settlement"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_world")
@@ -58,3 +59,7 @@ AutoStartWaves = true
 StartWaveNumber = 1
 
 [node name="HUD" parent="." instance=ExtResource("6_hud")]
+
+[node name="UICanvas" type="CanvasLayer" parent="."]
+
+[node name="SettlementPanel" parent="UICanvas" instance=ExtResource("9_settlement")]

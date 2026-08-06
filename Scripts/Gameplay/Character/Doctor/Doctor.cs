@@ -405,13 +405,6 @@ public partial class Doctor : CharacterBody2D
             // 干员获得经验
             op.AddExp(enemy.ExpReward);
             GD.Print($"[Doctor] {op.EntityName} 击杀敌人，获得 {enemy.ExpReward} 经验");
-
-            // 掉落资源直接进背包
-            if (Backpack != null)
-            {
-                Backpack.AddItem(enemy.ResourceItemId, enemy.ResourceReward);
-                GD.Print($"[Doctor] 拾取 {enemy.ResourceReward} 个资源(物品ID:{enemy.ResourceItemId})");
-            }
         }
     }
 

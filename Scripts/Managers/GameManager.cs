@@ -2,6 +2,7 @@ using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Character.Enemy;
+using OutpostProtocol.UI.Controllers;
 
 namespace OutpostProtocol.Managers;
 
@@ -39,6 +40,9 @@ public partial class GameManager : Node
     [ExportGroup("波次配置")]
     [Export] public bool EnableWaveSystem = true;
 
+    [ExportGroup("结算配置")]
+    [Export] public PackedScene SettlementPanelPrefab;
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -49,6 +53,7 @@ public partial class GameManager : Node
     private float _totalElapsed;
     private int _dayCount = 1;
     private EnemySpawner _enemySpawner;
+    private SettlementPanelController _settlementPanel;
 
     /// <summary>当前阶段总时长（秒）</summary>
     private float CurrentPhaseDuration => _currentState switch
@@ -323,5 +328,43 @@ public partial class GameManager : Node
         _totalElapsed = 0;
 
         GD.Print($"[GameManager] 从存档恢复 — Day {_dayCount}, Phase {_currentPhase}, State {_currentState}");
+    }
+
+    // ============================================================
+    // 结算面板集成
+    // ============================================================
+
+    /// <summary>显示结算面板（未实例化时按预制体创建）</summary>
+    public void ShowSettlementPanel()
+    {
+        if (SettlementPanelPrefab == null)
+        {
+            GD.Print("[GameManager] 未设置结算面板预制体");
+            return;
+        }
+
+        if (_settlementPanel == null)
+        {
+            var panel = SettlementPanelPrefab.Instantiate<SettlementPanelController>();
+            GetTree().CurrentScene.AddChild(panel);
+            _settlementPanel = panel;
+        }
+
+        _settlementPanel.Show();
+    }
+
+    /// <summary>隐藏结算面板</summary>
+    public void HideSettlementPanel()
+    {
+        _settlementPanel?.Hide();
+    }
+
+    /// <summary>休整期结束，直接进入新的一天</summary>
+    public void ContinueToNextDay()
+    {
+        if (_currentState == GameState.Rest)
+        {
+            AdvancePhase();
+        }
     }
 }
