@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "木材",
+    "category": "Material",
+    "maxStack": 99
+  },
+  {
+    "id": 2,
+    "name": "铁皮",
+    "category": "Material",
+    "maxStack": 99
+  },
+  {
+    "id": 3,
+    "name": "食物",
+    "category": "Consumable",
+    "maxStack": 20
+  },
+  {
+    "id": 4,
+    "name": "急救绷带",
+    "category": "Consumable",
+    "maxStack": 10
+  },
+  {
+    "id": 5,
+    "name": "源石",
+    "category": "Material",
+    "maxStack": 50
+  }
+]

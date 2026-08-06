@@ -89,6 +89,26 @@ public partial class EventBus : Node
     public delegate void LogMessageEventHandler(string message, string level);
 
     // ============================================================
+    // 7. 博士状态信号
+    // ============================================================
+
+    /// <summary>博士生命值变化</summary>
+    [Signal]
+    public delegate void DoctorHealthChangedEventHandler(float current, float max);
+
+    /// <summary>博士体力值变化</summary>
+    [Signal]
+    public delegate void DoctorStaminaChangedEventHandler(float current, float max);
+
+    // ============================================================
+    // 8. 背包信号
+    // ============================================================
+
+    /// <summary>背包内容变化（HUD 资源栏刷新）</summary>
+    [Signal]
+    public delegate void InventoryChangedEventHandler();
+
+    // ============================================================
     // 生命周期
     // ============================================================
 
@@ -185,6 +205,24 @@ public partial class EventBus : Node
     public void EmitLogMessage(string message, string level = "INFO")
     {
         EmitSignal(SignalName.LogMessage, message, level);
+    }
+
+    /// <summary>触发博士生命值变化</summary>
+    public void EmitDoctorHealthChanged(float current, float max)
+    {
+        EmitSignal(SignalName.DoctorHealthChanged, current, max);
+    }
+
+    /// <summary>触发博士体力值变化</summary>
+    public void EmitDoctorStaminaChanged(float current, float max)
+    {
+        EmitSignal(SignalName.DoctorStaminaChanged, current, max);
+    }
+
+    /// <summary>触发背包内容变化</summary>
+    public void EmitInventoryChanged()
+    {
+        EmitSignal(SignalName.InventoryChanged);
     }
 }
 

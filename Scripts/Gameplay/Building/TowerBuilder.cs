@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Core.Grid;
+using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
 
 namespace OutpostProtocol.Gameplay.Building;
@@ -19,6 +20,14 @@ public partial class TowerBuilder : Node
     [Export] public PackedScene[] TowerPrefabs;
     [Export] public Node2D TowerContainer;
     [Export] public Node2D PreviewNode;
+
+    /// <summary>资源背包（建造消耗；未接线时允许免费建造）</summary>
+    [Export] public Backpack Backpack;
+
+    [ExportGroup("建造消耗")]
+    [Export] public int[] BuildWoodCosts;
+    [Export] public int[] BuildIronCosts;
+    [Export] public int[] BuildOriginiumCosts;
 
     [ExportGroup("资源")]
     [Export] public int WoodAmount;
@@ -51,6 +60,13 @@ public partial class TowerBuilder : Node
         {
             TowerContainer = new Node2D { Name = "TowerContainer" };
             AddChild(TowerContainer);
+        }
+
+        // 自动查找博士背包
+        if (Backpack == null)
+        {
+            var doctor = GetTree().GetFirstNodeInGroup("doctor") as Node2D;
+            Backpack = doctor?.GetNodeOrNull<Backpack>("Backpack");
         }
 
         EventBus.Instance.GameStateChanged += OnGameStateChanged;
@@ -217,14 +233,33 @@ public partial class TowerBuilder : Node
 
     private bool HasResources()
     {
-        // TODO: 由外部背包系统提供
-        return true;
+        if (Backpack == null) return true;
+
+        int wood = GetBuildCost(BuildWoodCosts);
+        int iron = GetBuildCost(BuildIronCosts);
+        int originium = GetBuildCost(BuildOriginiumCosts);
+
+        return Backpack.GetCount(Backpack.WOOD_ITEM_ID) >= wood &&
+               Backpack.GetCount(Backpack.IRON_ITEM_ID) >= iron &&
+               Backpack.GetCount(Backpack.ORIGINIUM_ITEM_ID) >= originium;
     }
 
     private void ConsumeResources()
     {
-        // TODO: 由外部背包系统处理
-        GD.Print($"[TowerBuilder] 消耗资源: 木材{WoodAmount}, 铁{IronAmount}, 源石{OriginiumAmount}");
+        if (Backpack == null) return;
+
+        int wood = GetBuildCost(BuildWoodCosts);
+        int iron = GetBuildCost(BuildIronCosts);
+        int originium = GetBuildCost(BuildOriginiumCosts);
+
+        Backpack.TrySpend(wood, iron, originium);
+        GD.Print($"[TowerBuilder] 消耗资源: 木材{wood}, 铁{iron}, 源石{originium}");
+    }
+
+    private int GetBuildCost(int[] costs)
+    {
+        if (costs == null || _selectedTowerIndex < 0 || _selectedTowerIndex >= costs.Length) return 0;
+        return costs[_selectedTowerIndex];
     }
 
     // ============================================================

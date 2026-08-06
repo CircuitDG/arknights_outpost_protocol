@@ -1,0 +1,111 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/HUDController.cs" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+
+[node name="Root" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="TopLeftVBox" type="VBoxContainer" parent="Root"]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 240.0
+offset_bottom = 150.0
+
+[node name="HPLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "HP 100/100"
+
+[node name="HPBar" type="ProgressBar" parent="Root/TopLeftVBox"]
+custom_minimum_size = Vector2(180, 16)
+max_value = 100.0
+value = 100.0
+
+[node name="StaminaLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "体力 100/100"
+
+[node name="StaminaBar" type="ProgressBar" parent="Root/TopLeftVBox"]
+custom_minimum_size = Vector2(180, 16)
+max_value = 100.0
+value = 100.0
+
+[node name="ResourceLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "木材:0  铁皮:0  源石:0"
+
+[node name="TopRightVBox" type="VBoxContainer" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -240.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 120.0
+
+[node name="DayLabel" type="Label" parent="Root/TopRightVBox"]
+text = "Day 1"
+horizontal_alignment = 2
+
+[node name="PhaseLabel" type="Label" parent="Root/TopRightVBox"]
+text = "探索期"
+horizontal_alignment = 2
+
+[node name="PhaseBar" type="ProgressBar" parent="Root/TopRightVBox"]
+custom_minimum_size = Vector2(180, 16)
+max_value = 100.0
+
+[node name="BottomCenterHBox" type="HBoxContainer" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -56.0
+offset_right = 280.0
+offset_bottom = -12.0
+
+[node name="OperatorLabel" type="Label" parent="Root/BottomCenterHBox"]
+text = "干员: --"
+horizontal_alignment = 1
+
+[node name="BottomRightVBox" type="VBoxContainer" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -120.0
+offset_right = -12.0
+offset_bottom = -12.0
+
+[node name="SkillLabel" type="Label" parent="Root/BottomRightVBox"]
+text = "技能栏 F1-F4（待接入）"
+horizontal_alignment = 2
+
+[node name="BottomLeftVBox" type="VBoxContainer" parent="Root"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -80.0
+offset_right = 260.0
+offset_bottom = -12.0
+
+[node name="WaveLabel" type="Label" parent="Root/BottomLeftVBox"]
+text = "波次: --"
+
+[node name="PhaseNotice" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -30.0
+offset_right = 320.0
+offset_bottom = 30.0
+theme_override_font_sizes/font_size = 24
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+visible = false
+
+[node name="HUDController" type="Node" parent="."]
+script = ExtResource("1_hud")

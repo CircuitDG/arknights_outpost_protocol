@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://Scripts/Gameplay/Character/Doctor/Doctor.cs" id="1_doctor"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Inventory/Backpack.cs" id="3_backpack"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_doctor"]
 radius = 8.0
@@ -23,3 +24,6 @@ position_smoothing_speed = 5.0
 [node name="StaminaRegenTimer" type="Timer" parent="."]
 wait_time = 0.1
 autostart = true
+
+[node name="Backpack" type="Node" parent="."]
+script = ExtResource("3_backpack")

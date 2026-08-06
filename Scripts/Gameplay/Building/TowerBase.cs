@@ -2,6 +2,7 @@ using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Entity;
+using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,9 @@ public partial class TowerBase : Node2D
 
     [ExportGroup("攻击")]
     [Export] public PackedScene ProjectileScene; // 弹道预制体
+
+    /// <summary>资源背包（升级消耗；未接线时允许免费升级）</summary>
+    [Export] public Backpack Backpack;
 
     // ============================================================
     // 运行时状态
@@ -73,6 +77,13 @@ public partial class TowerBase : Node2D
     {
         // 加载数据
         LoadTowerData();
+
+        // 自动查找博士背包
+        if (Backpack == null)
+        {
+            var doctor = GetTree().GetFirstNodeInGroup("doctor") as Node2D;
+            Backpack = doctor?.GetNodeOrNull<Backpack>("Backpack");
+        }
 
         // 获取组件
         _detectionArea = GetNodeOrNull<Area2D>("DetectionArea");
@@ -231,7 +242,12 @@ public partial class TowerBase : Node2D
             return false;
         }
 
-        // TODO: 消耗资源由外部系统处理
+        // 消耗资源（未接线 Backpack 时允许升级）
+        if (Backpack != null && !Backpack.TrySpend(info.WoodCost, info.IronCost, info.OriginiumCost))
+        {
+            GD.Print($"[{Name}] 资源不足，无法升级到 Lv.{CurrentLevel + 1}");
+            return false;
+        }
 
         CurrentLevel++;
         UpdateVisuals();

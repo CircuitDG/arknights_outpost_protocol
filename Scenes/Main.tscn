@@ -1,13 +1,58 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=9 format=3]
 
-[ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="1_doctor_scene"]
-[ext_resource type="Script" path="res://Scripts/TestEventBus.cs" id="2_test"]
+[ext_resource type="Script" path="res://Scripts/GameWorldController.cs" id="1_world"]
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="2_doctor"]
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Operator.tscn" id="3_operator"]
+[ext_resource type="PackedScene" path="res://Scenes/World/GatherableResource.tscn" id="4_resource"]
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Enemy.tscn" id="5_enemy"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/HUD.tscn" id="6_hud"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Building/TowerBuilder.cs" id="7_builder"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Character/Enemy/EnemySpawner.cs" id="8_spawner"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("1_world")
 
 [node name="World" type="Node2D" parent="."]
 
-[node name="Doctor" parent="World" instance=ExtResource("1_doctor_scene")]
+[node name="GroundLayer" type="TileMapLayer" parent="World"]
 
-[node name="TestEventBus" type="Node" parent="."]
-script = ExtResource("2_test")
+[node name="ObstacleLayer" type="TileMapLayer" parent="World"]
+
+[node name="Doctor" parent="World" instance=ExtResource("2_doctor")]
+position = Vector2(96, 96)
+
+[node name="Operator_1" parent="World" instance=ExtResource("3_operator")]
+position = Vector2(80, 80)
+OperatorDataId = 1001
+
+[node name="Operator_2" parent="World" instance=ExtResource("3_operator")]
+position = Vector2(112, 80)
+OperatorDataId = 1002
+
+[node name="Gatherable_1" parent="World" instance=ExtResource("4_resource")]
+position = Vector2(48, 48)
+ItemId = 1
+AmountPerGather = 1
+MaxAmount = 5
+
+[node name="Gatherable_2" parent="World" instance=ExtResource("4_resource")]
+position = Vector2(272, 48)
+ItemId = 2
+AmountPerGather = 1
+MaxAmount = 4
+
+[node name="TargetPoint" type="Node2D" parent="."]
+position = Vector2(296, 296)
+
+[node name="TowerContainer" type="Node2D" parent="."]
+
+[node name="TowerBuilder" type="Node" parent="."]
+script = ExtResource("7_builder")
+
+[node name="EnemySpawner" type="Node" parent="."]
+script = ExtResource("8_spawner")
+EnemyScene = ExtResource("5_enemy")
+AutoStartWaves = true
+StartWaveNumber = 1
+
+[node name="HUD" parent="." instance=ExtResource("6_hud")]

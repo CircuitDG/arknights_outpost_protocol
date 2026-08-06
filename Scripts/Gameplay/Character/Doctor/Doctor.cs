@@ -2,6 +2,7 @@ using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Entity;
+using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
 using System.Collections.Generic;
 
@@ -53,6 +54,9 @@ public partial class Doctor : CharacterBody2D
     private Timer _staminaRegenTimer;
     private Sprite2D _sprite;
 
+    /// <summary>背包组件</summary>
+    public Backpack Backpack { get; private set; }
+
     // ============================================================
     // 公共属性
     // ============================================================
@@ -78,6 +82,10 @@ public partial class Doctor : CharacterBody2D
         // 获取组件引用
         _staminaRegenTimer = GetNode<Timer>("StaminaRegenTimer");
         _sprite = GetNode<Sprite2D>("Sprite2D");
+        Backpack = GetNodeOrNull<Backpack>("Backpack");
+
+        // 加入博士组，供采集点/塔/生成器查询
+        AddToGroup("doctor");
 
         // 连接信号
         _staminaRegenTimer.Timeout += OnStaminaRegenTick;
@@ -87,6 +95,8 @@ public partial class Doctor : CharacterBody2D
         EventBus.Instance.EntityDied += OnEntityDied;
 
         GD.Print($"[Doctor] 初始化完成 — HP:{_currentHealth}/{MaxHealth}, 体力:{_currentStamina}/{MaxStamina}");
+        EmitHealthChanged();
+        EmitStaminaChanged();
     }
 
     public override void _ExitTree()
@@ -193,6 +203,8 @@ public partial class Doctor : CharacterBody2D
             _currentStamina += StaminaRegenRate * 0.1f;
             if (_currentStamina > MaxStamina) _currentStamina = MaxStamina;
         }
+
+        EmitStaminaChanged();
     }
 
     // ============================================================
@@ -226,6 +238,7 @@ public partial class Doctor : CharacterBody2D
         if (_currentHealth < 0) _currentHealth = 0;
 
         GD.Print($"[Doctor] 受到 {damage} 点伤害，剩余 HP:{_currentHealth}");
+        EmitHealthChanged();
 
         // 广播伤害事件
         EventBus.Instance.EmitEntityDamaged(this, (int)damage);
@@ -268,6 +281,7 @@ public partial class Doctor : CharacterBody2D
         if (_isDead) return;
         _currentHealth = Mathf.Min(_currentHealth + amount, MaxHealth);
         GD.Print($"[Doctor] 恢复 {amount} HP，当前 HP:{_currentHealth}");
+        EmitHealthChanged();
     }
 
     /// <summary>恢复博士体力值</summary>
@@ -292,12 +306,14 @@ public partial class Doctor : CharacterBody2D
     public void SetHealth(float health)
     {
         _currentHealth = Mathf.Clamp(health, 0, MaxHealth);
+        EmitHealthChanged();
     }
 
     /// <summary>设置体力值（用于恢复存档）</summary>
     public void SetStamina(float stamina)
     {
         _currentStamina = Mathf.Clamp(stamina, 0, MaxStamina);
+        EmitStaminaChanged();
     }
 
     /// <summary>从存档数据恢复位置</summary>
@@ -321,6 +337,13 @@ public partial class Doctor : CharacterBody2D
             // 干员获得经验
             op.AddExp(enemy.ExpReward);
             GD.Print($"[Doctor] {op.EntityName} 击杀敌人，获得 {enemy.ExpReward} 经验");
+
+            // 掉落资源直接进背包
+            if (Backpack != null)
+            {
+                Backpack.AddItem(enemy.ResourceItemId, enemy.ResourceReward);
+                GD.Print($"[Doctor] 拾取 {enemy.ResourceReward} 个资源(物品ID:{enemy.ResourceItemId})");
+            }
         }
     }
 
@@ -330,6 +353,16 @@ public partial class Doctor : CharacterBody2D
         {
             HandleEnemyKilled(enemy, killerEntity);
         }
+    }
+
+    private void EmitHealthChanged()
+    {
+        EventBus.Instance?.EmitDoctorHealthChanged(_currentHealth, MaxHealth);
+    }
+
+    private void EmitStaminaChanged()
+    {
+        EventBus.Instance?.EmitDoctorStaminaChanged(_currentStamina, MaxStamina);
     }
 
     // ============================================================

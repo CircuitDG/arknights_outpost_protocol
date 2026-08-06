@@ -23,6 +23,7 @@ public partial class Enemy : BaseEntity
     [ExportGroup("波次奖励")]
     [Export] public int ExpReward = 10;
     [Export] public int ResourceReward = 5; // 掉落物资
+    [Export] public int ResourceItemId = 1; // 掉落物品 ID（默认木材）
 
     // ============================================================
     // 运行时状态
