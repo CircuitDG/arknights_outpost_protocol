@@ -24,6 +24,9 @@ public partial class AttackComponent : Node
     [Export] public FactionType TargetFaction = FactionType.Enemy;
     [Export] public bool AutoAttack = true; // 是否自动攻击
 
+    /// <summary>索敌物理查询使用的碰撞掩码（干员层=1，敌人层=2）</summary>
+    [Export] public uint TargetCollisionMask = 2u;
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -116,6 +119,9 @@ public partial class AttackComponent : Node
             return;
         }
 
+        // 幂等：已经是当前目标且正在攻击时，不重置前摇计时
+        if (_isAttacking && _currentTarget == target) return;
+
         _currentTarget = target;
         _isAttacking = true;
         _attackTimer = AttackInterval * 0.5f; // 首次攻击有短暂前摇
@@ -140,7 +146,7 @@ public partial class AttackComponent : Node
         var query = new PhysicsShapeQueryParameters2D();
         query.Shape = new CircleShape2D { Radius = AttackRange };
         query.Transform = new Transform2D(0, _owner.GlobalPosition);
-        query.CollisionMask = 2u; // 干员在 layer 1，敌人在 layer 2
+        query.CollisionMask = TargetCollisionMask;
 
         var results = space.IntersectShape(query);
 
@@ -149,8 +155,9 @@ public partial class AttackComponent : Node
 
         foreach (var result in results)
         {
-            var entity = result["collider"].As<BaseEntity>();
-            if (entity == null || entity == _owner) continue;
+            // collider 可能是非 BaseEntity 的物理体（如博士），必须安全转换
+            var collider = result["collider"].As<GodotObject>();
+            if (collider is not BaseEntity entity || entity == _owner) continue;
             if (entity.Faction != TargetFaction) continue;
             if (entity.IsDead) continue;
 

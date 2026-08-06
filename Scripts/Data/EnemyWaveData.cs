@@ -34,4 +34,10 @@ public class EnemySpawnConfig
 
     [JsonPropertyName("spawnPoint")]
     public string SpawnPoint { get; set; } = "Edge"; // Edge, Random, etc.
+
+    [JsonPropertyName("expReward")]
+    public int ExpReward { get; set; } = -1; // <=0 时使用敌人默认值
+
+    [JsonPropertyName("resourceReward")]
+    public int ResourceReward { get; set; } = -1; // <=0 时使用敌人默认值
 }

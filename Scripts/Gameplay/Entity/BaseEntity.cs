@@ -33,7 +33,7 @@ public partial class BaseEntity : CharacterBody2D
     // 状态
     // ============================================================
 
-    private bool _isDead;
+    protected bool _isDead;
     public bool IsDead => _isDead;
     public event Action<BaseEntity> OnDeath;
 

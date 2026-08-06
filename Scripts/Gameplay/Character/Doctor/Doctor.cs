@@ -84,6 +84,7 @@ public partial class Doctor : CharacterBody2D
 
         // 订阅 EventBus
         EventBus.Instance.DoctorDied += OnDoctorDied;
+        EventBus.Instance.EntityDied += OnEntityDied;
 
         GD.Print($"[Doctor] 初始化完成 — HP:{_currentHealth}/{MaxHealth}, 体力:{_currentStamina}/{MaxStamina}");
     }
@@ -93,6 +94,7 @@ public partial class Doctor : CharacterBody2D
         if (EventBus.Instance != null)
         {
             EventBus.Instance.DoctorDied -= OnDoctorDied;
+            EventBus.Instance.EntityDied -= OnEntityDied;
         }
     }
 
@@ -305,6 +307,32 @@ public partial class Doctor : CharacterBody2D
     }
 
     // ============================================================
+    // 战斗奖励
+    // ============================================================
+
+    /// <summary>处理击杀事件，分配经验</summary>
+    public void HandleEnemyKilled(OutpostProtocol.Gameplay.Character.Enemy.Enemy enemy, BaseEntity killer)
+    {
+        if (enemy == null) return;
+
+        // 检查击杀者是否是干员
+        if (killer is OutpostProtocol.Gameplay.Character.Operator.Operator op)
+        {
+            // 干员获得经验
+            op.AddExp(enemy.ExpReward);
+            GD.Print($"[Doctor] {op.EntityName} 击杀敌人，获得 {enemy.ExpReward} 经验");
+        }
+    }
+
+    private void OnEntityDied(Node2D entity, Node2D killer)
+    {
+        if (entity is OutpostProtocol.Gameplay.Character.Enemy.Enemy enemy && killer is BaseEntity killerEntity)
+        {
+            HandleEnemyKilled(enemy, killerEntity);
+        }
+    }
+
+    // ============================================================
     // 干员指挥
     // ============================================================
 
@@ -364,10 +392,10 @@ public partial class Doctor : CharacterBody2D
         var results = space.IntersectPoint(query);
         if (results.Count > 0)
         {
-            var collider = results[0]["collider"].As<BaseEntity>();
-            if (collider != null && collider.Faction == FactionType.Enemy)
+            var collider = results[0]["collider"].As<GodotObject>();
+            if (collider is BaseEntity entity && entity.Faction == FactionType.Enemy)
             {
-                CommandAttack(collider);
+                CommandAttack(entity);
                 return;
             }
         }

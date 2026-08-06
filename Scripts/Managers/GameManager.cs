@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
+using OutpostProtocol.Gameplay.Character.Enemy;
 
 namespace OutpostProtocol.Managers;
 
@@ -35,6 +36,9 @@ public partial class GameManager : Node
     /// <summary>休整期：1 小时 → 60 秒</summary>
     [Export] public float RestDuration = 60.0f;
 
+    [ExportGroup("波次配置")]
+    [Export] public bool EnableWaveSystem = true;
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -44,6 +48,7 @@ public partial class GameManager : Node
     private float _phaseTimer;
     private float _totalElapsed;
     private int _dayCount = 1;
+    private EnemySpawner _enemySpawner;
 
     /// <summary>当前阶段总时长（秒）</summary>
     private float CurrentPhaseDuration => _currentState switch
@@ -123,15 +128,51 @@ public partial class GameManager : Node
             return;
         }
 
-        // 目前无外部事件需要监听，为扩展预留
-        // eb.GameStateChanged += OnGameStateChanged;
+        // 波次系统：监听波次完成，延迟查找场景中的 EnemySpawner
+        if (EnableWaveSystem)
+        {
+            eb.WaveCompleted += OnWaveCompleted;
+            Callable.From(FindEnemySpawner).CallDeferred();
+        }
     }
 
     private void UnsubscribeEvents()
     {
         var eb = EventBus.Instance;
         if (eb == null) return;
-        // eb.GameStateChanged -= OnGameStateChanged;
+        if (EnableWaveSystem)
+        {
+            eb.WaveCompleted -= OnWaveCompleted;
+        }
+    }
+
+    /// <summary>在当前场景中查找 EnemySpawner（World 下优先，其次场景根节点）</summary>
+    private void FindEnemySpawner()
+    {
+        var scene = GetTree().CurrentScene;
+        if (scene == null) return;
+
+        _enemySpawner = scene.GetNodeOrNull<Node2D>("World")?.GetNodeOrNull<EnemySpawner>("EnemySpawner");
+        _enemySpawner ??= scene.GetNodeOrNull<EnemySpawner>("EnemySpawner");
+
+        if (_enemySpawner == null)
+        {
+            GD.Print("[GameManager] 未找到 EnemySpawner，波次系统禁用");
+        }
+        else
+        {
+            GD.Print("[GameManager] EnemySpawner 已连接");
+        }
+    }
+
+    /// <summary>波次完成：若正处于防守期则提前推进到休整期</summary>
+    private void OnWaveCompleted(int waveNumber)
+    {
+        GD.Print($"[GameManager] 波次 {waveNumber} 完成，进入休整期");
+        if (_currentState == GameState.Battle)
+        {
+            _phaseTimer = BattleDuration;
+        }
     }
 
     // ============================================================
