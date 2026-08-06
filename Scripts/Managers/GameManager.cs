@@ -417,6 +417,10 @@ public partial class GameManager : Node
         _phaseTimer = 0;
         _totalElapsed = 0;
 
+        // 广播恢复后的状态，让 HUD/面板等刷新
+        EventBus.Instance.EmitGameStateChanged(_currentState);
+        EventBus.Instance.EmitDayNightChanged(_currentPhase, PhaseProgress);
+
         GD.Print($"[GameManager] 从存档恢复 — Day {_dayCount}, Phase {_currentPhase}, State {_currentState}");
     }
 

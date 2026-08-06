@@ -42,6 +42,9 @@ public partial class SaveManager : Node
     private RunSave _currentRun;
     private string _currentRunPath;
 
+    /// <summary>下次进入游戏场景时是否恢复对局存档（继续游戏置 true，新游戏置 false）</summary>
+    public bool RestoreOnGameLoad { get; set; }
+
     // ============================================================
     // 公共属性
     // ============================================================

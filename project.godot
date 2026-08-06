@@ -14,7 +14,7 @@ config/name="Arknights-Outpost_Protocol"
 run/main_scene="res://Scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.7", "C#", "Mobile")
 run/max_fps=1000
-config/icon="res://icon.svg"
+config/icon="res://Assets/Art/icon.png"
 
 [autoload]
 

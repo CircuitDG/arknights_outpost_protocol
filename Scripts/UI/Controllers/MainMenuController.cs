@@ -59,6 +59,7 @@ public partial class MainMenuController : Control
         var saveManager = SaveManager.Instance;
         if (saveManager != null)
         {
+            saveManager.RestoreOnGameLoad = false; // 新游戏不恢复旧档
             saveManager.DeleteCurrentRun();
             saveManager.NewRun();
         }
@@ -73,6 +74,7 @@ public partial class MainMenuController : Control
         var saveManager = SaveManager.Instance;
         if (saveManager != null && saveManager.LoadRun())
         {
+            saveManager.RestoreOnGameLoad = true; // 继续游戏 → 进入后恢复
             GetTree().ChangeSceneToFile(GameScenePath);
         }
         else
