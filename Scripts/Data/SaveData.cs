@@ -83,6 +83,9 @@ public class RunSave
 
     [JsonPropertyName("isGameOver")]
     public bool IsGameOver { get; set; }
+
+    [JsonPropertyName("resourceStates")]
+    public List<ResourceState> ResourceStates { get; set; } = new();
 }
 
 // ============================================================
@@ -150,6 +153,19 @@ public class TowerRuntime
 
     [JsonPropertyName("currentDurability")]
     public int CurrentDurability { get; set; } = 100;
+}
+
+/// <summary>资源点状态（网格坐标 + 是否已搜索）</summary>
+public class ResourceState
+{
+    [JsonPropertyName("gridX")]
+    public int GridX { get; set; }
+
+    [JsonPropertyName("gridY")]
+    public int GridY { get; set; }
+
+    [JsonPropertyName("collected")]
+    public bool Collected { get; set; }
 }
 
 // ============================================================

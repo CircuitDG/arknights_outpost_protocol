@@ -19,11 +19,12 @@ public partial class GameWorldController : Node2D
     private const int TileSize = 16;
 
     private GridManager _grid;
-    private TileMapLayer _ground;
-    private TileMapLayer _obstacles;
     private TowerBuilder _builder;
     private EnemySpawner _spawner;
     private bool _restoreStarted;
+
+    /// <summary>分块加载器（供测试/调试读取）</summary>
+    public ChunkLoader ChunkLoader { get; private set; }
 
     /// <summary>生成的地图数据（供测试/调试读取）</summary>
     public MapData MapData { get; private set; }
@@ -34,8 +35,6 @@ public partial class GameWorldController : Node2D
     public override void _Ready()
     {
         _grid = GridManager.Instance;
-        _ground = GetNode<TileMapLayer>("World/GroundLayer");
-        _obstacles = GetNode<TileMapLayer>("World/ObstacleLayer");
         _builder = GetNode<TowerBuilder>("TowerBuilder");
         _spawner = GetNode<EnemySpawner>("EnemySpawner");
 
@@ -44,11 +43,9 @@ public partial class GameWorldController : Node2D
         MapData = new MapGenerator(config).Generate();
 
         _grid.GridSize = TileSize;
-        SetupTileSet(_ground);
-        SetupTileSet(_obstacles);
-        PaintMap();
-        _grid.ObstacleLayer = _obstacles;
-        _grid.BuildGrid();
+        var tileSet = CreateTileSet();
+        _grid.BuildGridFromMap(MapData); // 逻辑网格直接来自地图数据
+        SetupChunkLoader(tileSet); // 视觉图层按块加载
 
         PlacePlayerAndOutpost();
         SpawnResourceNodes();
@@ -99,7 +96,7 @@ public partial class GameWorldController : Node2D
     // 地图绘制
     // ============================================================
 
-    private void SetupTileSet(TileMapLayer layer)
+    private TileSet CreateTileSet()
     {
         var tileSet = new TileSet { TileSize = new Vector2I(TileSize, TileSize) };
         var atlas = new TileSetAtlasSource
@@ -111,22 +108,23 @@ public partial class GameWorldController : Node2D
         atlas.CreateTile(new Vector2I(0, 0));
         atlas.CreateTile(new Vector2I(1, 0));
         tileSet.AddSource(atlas, 0);
-        layer.TileSet = tileSet;
+        return tileSet;
     }
 
-    private void PaintMap()
+    private void SetupChunkLoader(TileSet tileSet)
     {
-        for (int x = 0; x < MapData.Width; x++)
+        var container = new Node2D { Name = "ChunkContainer" };
+        GetNode<Node2D>("World").AddChild(container);
+
+        var loader = new ChunkLoader
         {
-            for (int y = 0; y < MapData.Height; y++)
-            {
-                _ground.SetCell(new Vector2I(x, y), 0, new Vector2I(0, 0));
-                if (MapData.Building[x, y] == 1)
-                {
-                    _obstacles.SetCell(new Vector2I(x, y), 0, new Vector2I(1, 0));
-                }
-            }
-        }
+            ChunkSize = 16,
+            LoadRadius = 2,
+            FollowTarget = GetNode<Node2D>("World/Doctor"),
+        };
+        loader.Setup(MapData, tileSet, container);
+        AddChild(loader);
+        ChunkLoader = loader;
     }
 
     // ============================================================
@@ -175,6 +173,7 @@ public partial class GameWorldController : Node2D
             node.AmountPerGather = point.Amount;
             node.MaxAmount = point.Amount;
             node.EnableRespawn = false; // 建筑内搜索点一次性
+            node.MapCell = point.Position;
             container.AddChild(node);
             node.GlobalPosition = _grid.GridToWorld(point.Position);
         }
@@ -226,6 +225,22 @@ public partial class GameWorldController : Node2D
             _builder.TowerContainer.AddChild(tower);
             tower.GlobalPosition = new Vector2(rt.PosX, rt.PosY);
             tower.RestoreFromRuntime(rt);
+        }
+
+        // 资源点状态恢复（已搜索的保持隐藏）
+        foreach (var state in run.ResourceStates)
+        {
+            if (!state.Collected) continue;
+            foreach (var node in GetTree().GetNodesInGroup("gatherable_resources"))
+            {
+                if (node is GatherableResource resource &&
+                    resource.MapCell.X == state.GridX &&
+                    resource.MapCell.Y == state.GridY)
+                {
+                    resource.RestoreCollected();
+                    break;
+                }
+            }
         }
 
         sm.RestoreOnGameLoad = false;

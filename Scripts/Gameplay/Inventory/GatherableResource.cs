@@ -25,6 +25,9 @@ public partial class GatherableResource : Node2D
     [Export] public float RespawnTime = 60.0f; // 重生时间（秒）
     [Export] public float RespawnOffset = 30.0f; // 重生位置随机偏移
 
+    /// <summary>地图网格坐标（-1,-1 表示非地图生成节点），用于存档恢复</summary>
+    [Export] public Vector2I MapCell = new(-1, -1);
+
     // ============================================================
     // 运行时状态
     // ============================================================
@@ -43,6 +46,15 @@ public partial class GatherableResource : Node2D
     public bool IsCollected => _isCollected;
     public bool IsRespawning => _isRespawning;
     public float RespawnProgress => _isRespawning && RespawnTime > 0 ? _respawnTimer / RespawnTime : 0f;
+
+    /// <summary>从存档恢复为"已搜索"状态</summary>
+    public void RestoreCollected()
+    {
+        _isCollected = true;
+        _isRespawning = false;
+        _remaining = 0;
+        Hide();
+    }
 
     // ============================================================
     // 生命周期

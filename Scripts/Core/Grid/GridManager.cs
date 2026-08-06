@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using OutpostProtocol.Core.MapGeneration;
 
 namespace OutpostProtocol.Core.Grid;
 
@@ -135,6 +136,36 @@ public partial class GridManager : Node2D
     {
         GD.Print("[GridManager] 重新构建网格...");
         BuildGrid();
+    }
+
+    /// <summary>直接从地图数据构建网格（分块加载时逻辑网格与视觉图层解耦）</summary>
+    public void BuildGridFromMap(MapData map)
+    {
+        if (map == null)
+        {
+            GD.PushError("[GridManager] 地图数据为空，无法构建网格");
+            return;
+        }
+
+        _gridSize = new Vector2I(map.Width, map.Height);
+        _worldOrigin = Vector2.Zero;
+        _walkableGrid = new bool[map.Width, map.Height];
+
+        int walkableCount = 0;
+        for (int x = 0; x < map.Width; x++)
+        {
+            for (int y = 0; y < map.Height; y++)
+            {
+                bool walkable = !map.IsWall(x, y);
+                _walkableGrid[x, y] = walkable;
+                if (walkable) walkableCount++;
+            }
+        }
+
+        _isBuilt = true;
+        GD.Print($"[GridManager] 网格构建完成（地图数据）— 尺寸:{_gridSize.X}x{_gridSize.Y}, 可行走:{walkableCount} 格");
+        OutpostProtocol.Core.EventBus.EventBus.Instance
+            .EmitLogMessage($"GridManager 网格构建完成: {walkableCount} 格可行走", "INFO");
     }
 
     // ============================================================

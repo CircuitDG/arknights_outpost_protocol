@@ -29,6 +29,7 @@ public partial class TestCityMapController : Node
 
             GD.Print($"[TestCityMap] 地图: {gw.MapData.Width}x{gw.MapData.Height}, 建筑:{gw.BuildingCount}, 资源点:{gw.ResourcePointCount}, 街道格:{gw.MapData.StreetCells.Count}");
             GD.Print($"[TestCityMap] 网格: {grid.GridDimensions}, 可行走格: {CountWalkable(grid)}");
+            GD.Print($"[TestCityMap] 分块: 已加载={gw.ChunkLoader?.ActiveChunkCount}, 中心={gw.ChunkLoader?.CenterChunk}");
 
             Vector2 start = doctor.GlobalPosition;
             Vector2 end = grid.GridToWorld(gw.MapData.OutpostCell);
@@ -41,7 +42,29 @@ public partial class TestCityMapController : Node
             int resourceNodes = GetTree().GetNodesInGroup("gatherable_resources").Count;
             GD.Print($"[TestCityMap] 场景资源节点: {resourceNodes}");
         }
-        else if (_frameCount >= 90)
+        else if (_frameCount == 82)
+        {
+            // 传送到远处街道，验证分块卸载/加载
+            var gw = GetNode<GameWorldController>("../Main");
+            Vector2I farCell = Vector2I.Zero;
+            foreach (var street in gw.MapData.StreetCells)
+            {
+                if (street.X > 150 && street.Y > 150)
+                {
+                    farCell = street;
+                    break;
+                }
+            }
+            var doctor = GetNode<Doctor>("../Main/World/Doctor");
+            doctor.GlobalPosition = GridManager.Instance.GridToWorld(farCell);
+            GD.Print($"[TestCityMap] 传送到街道格 {farCell}");
+        }
+        else if (_frameCount == 100)
+        {
+            var gw = GetNode<GameWorldController>("../Main");
+            GD.Print($"[TestCityMap] 传送后: 中心={gw.ChunkLoader?.CenterChunk}, 已加载={gw.ChunkLoader?.ActiveChunkCount}");
+        }
+        else if (_frameCount >= 110)
         {
             GD.Print("[TestCityMap] 测试完成");
             GetTree().Quit();

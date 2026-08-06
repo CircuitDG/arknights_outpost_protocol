@@ -4,6 +4,7 @@ using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Operator;
+using OutpostProtocol.Gameplay.Inventory;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -388,6 +389,21 @@ public partial class SaveManager : Node
         {
             if (tower == null) continue;
             _currentRun.Towers.Add(tower.ExportRuntime());
+        }
+
+        // 3.5 资源点状态
+        _currentRun.ResourceStates.Clear();
+        foreach (var node in GetTree().GetNodesInGroup("gatherable_resources"))
+        {
+            if (node is GatherableResource resource && resource.MapCell.X >= 0)
+            {
+                _currentRun.ResourceStates.Add(new ResourceState
+                {
+                    GridX = resource.MapCell.X,
+                    GridY = resource.MapCell.Y,
+                    Collected = resource.IsCollected,
+                });
+            }
         }
 
         // 4. 游戏状态

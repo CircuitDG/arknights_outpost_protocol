@@ -1,64 +1,47 @@
 using Godot;
+using OutpostProtocol.Core.MapGeneration;
 using System.Collections.Generic;
 
 namespace OutpostProtocol.Core.Grid;
 
 /// <summary>
-/// 分块加载器（无缝大地图优化）
-/// 职责：仅加载玩家周围的 TileMap 块，优化性能
+/// 分块加载器（无缝大地图）
+/// 职责：围绕跟随目标加载/卸载 TileMap 块，逻辑网格由 GridManager 单独持有
 /// </summary>
 public partial class ChunkLoader : Node
 {
-    // ============================================================
-    // 导出变量
-    // ============================================================
-
     [ExportGroup("分块配置")]
-    [Export] public TileMapLayer SourceTileMap; // 原始 TileMap
-    [Export] public Node2D ChunkContainer; // 存放已加载块的容器
-    [Export] public int ChunkSize = 16; // 每块大小（格子数）
-    [Export] public int LoadRadius = 3; // 加载半径（块数）
+    [Export] public int ChunkSize = 16; // 每块格子数
+    [Export] public int LoadRadius = 2; // 加载半径（块数），实际 (2R+1)² 块
 
     [ExportGroup("跟随目标")]
-    [Export] public Node2D FollowTarget; // 跟随的目标（如博士）
+    [Export] public Node2D FollowTarget; // 如博士
 
-    // ============================================================
-    // 运行时状态
-    // ============================================================
-
-    private Dictionary<Vector2I, Node2D> _loadedChunks = new();
+    private MapData _mapData;
+    private TileSet _tileSet;
+    private Node2D _chunkContainer;
+    private readonly Dictionary<Vector2I, Node2D> _loadedChunks = new();
     private Vector2I _lastCenterChunk = new(int.MinValue, int.MinValue);
 
-    // ============================================================
-    // 生命周期
-    // ============================================================
+    public int ActiveChunkCount => _loadedChunks.Count;
+    public Vector2I CenterChunk => _lastCenterChunk;
 
-    public override void _Ready()
+    /// <summary>初始化（地图数据 + 瓦片集 + 容器）</summary>
+    public void Setup(MapData mapData, TileSet tileSet, Node2D container)
     {
-        if (SourceTileMap == null)
-        {
-            GD.PushError("[ChunkLoader] 未设置 SourceTileMap");
-            return;
-        }
-
-        if (ChunkContainer == null)
-        {
-            ChunkContainer = new Node2D { Name = "ChunkContainer" };
-            AddChild(ChunkContainer);
-        }
+        _mapData = mapData;
+        _tileSet = tileSet;
+        _chunkContainer = container;
     }
 
     public override void _Process(double delta)
     {
-        if (FollowTarget == null) return;
+        if (FollowTarget == null || _mapData == null || _tileSet == null || _chunkContainer == null) return;
 
-        Vector2 targetPos = FollowTarget.GlobalPosition;
-        Vector2I centerChunk = WorldToChunk(targetPos);
-
-        // 如果中心块未变化，跳过
+        Vector2I centerChunk = WorldToChunk(FollowTarget.GlobalPosition);
         if (centerChunk == _lastCenterChunk) return;
-        _lastCenterChunk = centerChunk;
 
+        _lastCenterChunk = centerChunk;
         UpdateChunks(centerChunk);
     }
 
@@ -69,8 +52,6 @@ public partial class ChunkLoader : Node
     private void UpdateChunks(Vector2I centerChunk)
     {
         var neededChunks = new HashSet<Vector2I>();
-
-        // 计算需要的块
         for (int dx = -LoadRadius; dx <= LoadRadius; dx++)
         {
             for (int dy = -LoadRadius; dy <= LoadRadius; dy++)
@@ -79,7 +60,6 @@ public partial class ChunkLoader : Node
             }
         }
 
-        // 加载新块
         foreach (var chunkPos in neededChunks)
         {
             if (!_loadedChunks.ContainsKey(chunkPos))
@@ -88,7 +68,6 @@ public partial class ChunkLoader : Node
             }
         }
 
-        // 卸载旧块
         var toRemove = new List<Vector2I>();
         foreach (var kvp in _loadedChunks)
         {
@@ -97,7 +76,6 @@ public partial class ChunkLoader : Node
                 toRemove.Add(kvp.Key);
             }
         }
-
         foreach (var key in toRemove)
         {
             UnloadChunk(key);
@@ -106,19 +84,35 @@ public partial class ChunkLoader : Node
 
     private void LoadChunk(Vector2I chunkPos)
     {
-        var chunkNode = new Node2D
+        var chunk = new Node2D
         {
             Name = $"Chunk_{chunkPos.X}_{chunkPos.Y}",
-            Position = new Vector2(
-                chunkPos.X * ChunkSize * 16,
-                chunkPos.Y * ChunkSize * 16
-            ),
+            Position = new Vector2(chunkPos.X * ChunkSize * 16, chunkPos.Y * ChunkSize * 16),
         };
 
-        // TODO: 使用 SourceTileMap.GetCell() 逐格复制真实块数据
+        var ground = new TileMapLayer { Name = "GroundLayer", TileSet = _tileSet };
+        var obstacle = new TileMapLayer { Name = "ObstacleLayer", TileSet = _tileSet };
+        chunk.AddChild(ground);
+        chunk.AddChild(obstacle);
 
-        ChunkContainer.AddChild(chunkNode);
-        _loadedChunks[chunkPos] = chunkNode;
+        for (int lx = 0; lx < ChunkSize; lx++)
+        {
+            for (int ly = 0; ly < ChunkSize; ly++)
+            {
+                int wx = chunkPos.X * ChunkSize + lx;
+                int wy = chunkPos.Y * ChunkSize + ly;
+                if (!_mapData.IsValidCell(wx, wy)) continue;
+
+                ground.SetCell(new Vector2I(lx, ly), 0, new Vector2I(0, 0));
+                if (_mapData.IsWall(wx, wy))
+                {
+                    obstacle.SetCell(new Vector2I(lx, ly), 0, new Vector2I(1, 0));
+                }
+            }
+        }
+
+        _chunkContainer.AddChild(chunk);
+        _loadedChunks[chunkPos] = chunk;
         GD.Print($"[ChunkLoader] 加载块: {chunkPos}");
     }
 
@@ -133,14 +127,12 @@ public partial class ChunkLoader : Node
     }
 
     // ============================================================
-    // 工具方法
+    // 工具
     // ============================================================
 
     private Vector2I WorldToChunk(Vector2 worldPos)
     {
-        int tileSize = 16; // 假设每格 16 像素
-        int chunkPixelSize = ChunkSize * tileSize;
-
+        int chunkPixelSize = ChunkSize * 16;
         return new Vector2I(
             Mathf.FloorToInt(worldPos.X / chunkPixelSize),
             Mathf.FloorToInt(worldPos.Y / chunkPixelSize)
