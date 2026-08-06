@@ -276,28 +276,31 @@ public partial class SkillComponent : Node
     private void ExecuteBuffEffect(SkillData skill)
     {
         var targets = GetTargets(skill);
+        float duration = skill.EffectParams.GetValueOrDefault("duration", 3.0f);
 
         foreach (var target in targets)
         {
-            if (target == null || target is not Operator op) continue;
+            if (target == null || target.IsDead) continue;
 
-            if (skill.EffectParams.TryGetValue("attackBonus", out float attackBonus) && attackBonus > 0)
-            {
-                // 临时攻击力加成（TODO: 定时还原，接入真正 Buff 系统）
-                int baseDamage = op.Data?.BaseAttack ?? 20;
-                op.Attack.AttackDamage = (int)(baseDamage * (1 + attackBonus));
-                GD.Print($"[SkillComponent] {op.EntityName} 攻击力 +{attackBonus * 100}% → {op.Attack.AttackDamage}");
-            }
-
+            // 攻速 Buff
             if (skill.EffectParams.TryGetValue("attackSpeedBonus", out float speedBonus) && speedBonus > 0)
             {
-                GD.Print($"[SkillComponent] {op.EntityName} 攻速 +{speedBonus * 100}%");
+                BuffManager.Instance.AddBuff(target, BuffType.AttackSpeed, speedBonus, duration, sourceSkillId: skill.Id);
+                GD.Print($"[SkillComponent] {target.EntityName} 攻速 +{speedBonus * 100}%");
             }
 
+            // 攻击力 Buff
+            if (skill.EffectParams.TryGetValue("attackBonus", out float attackBonus) && attackBonus > 0)
+            {
+                BuffManager.Instance.AddBuff(target, BuffType.Attack, attackBonus, duration, sourceSkillId: skill.Id);
+                GD.Print($"[SkillComponent] {target.EntityName} 攻击力 +{attackBonus * 100}%");
+            }
+
+            // 防御 Buff
             if (skill.EffectParams.TryGetValue("defenseBonus", out float defBonus) && defBonus > 0)
             {
-                // TODO: 防御加成接入
-                GD.Print($"[SkillComponent] {op.EntityName} 防御 +{defBonus * 100}%");
+                BuffManager.Instance.AddBuff(target, BuffType.Defense, defBonus, duration, sourceSkillId: skill.Id);
+                GD.Print($"[SkillComponent] {target.EntityName} 防御 +{defBonus * 100}%");
             }
         }
     }
@@ -319,7 +322,7 @@ public partial class SkillComponent : Node
 
             if (skill.EffectParams.TryGetValue("stunDuration", out float stun) && stun > 0)
             {
-                // TODO: 实现眩晕状态
+                BuffManager.Instance.AddBuff(target, BuffType.Stun, 0f, stun, sourceSkillId: skill.Id);
                 GD.Print($"[SkillComponent] {target.EntityName} 被眩晕 {stun}s");
             }
         }

@@ -1,6 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Core.Grid;
+using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Entity;
@@ -116,11 +117,32 @@ public partial class TestOperatorController : Node
             GD.Print($"[TestOperator] 干员1: {_op1}");
             TestDownReviveLevel();
         }
+        else if (_frameCount == 80)
+        {
+            // Buff 移除 API：先加 5 秒攻击 Buff，再手动移除
+            BuffManager.Instance.AddBuff(_op1, BuffType.Attack, 0.5f, 5.0f);
+            GD.Print($"[TestOperator] 手动移除前攻击力: {_op1.Attack?.AttackDamage}");
+        }
+        else if (_frameCount == 85)
+        {
+            BuffManager.Instance.RemoveBuffsOfType(_op1, BuffType.Attack);
+            GD.Print($"[TestOperator] RemoveBuffsOfType 后攻击力: {_op1.Attack?.AttackDamage}（应还原为 38）");
+        }
+        else if (_frameCount == 90)
+        {
+            // 短时 Buff 验证定时还原（持续 1 秒）
+            BuffManager.Instance.AddBuff(_op1, BuffType.Attack, 0.5f, 1.0f);
+            GD.Print($"[TestOperator] Buff 生效后攻击力: {_op1.Attack?.AttackDamage}（应为 57）");
+        }
         else if (_frameCount == 120)
         {
             GD.Print($"[TestOperator] 技能冷却进度: {_op2.Skill?.GetCooldownProgress(1):F2}, 就绪={_op2.Skill?.IsSkillReady(1)}, 攻击力={_op2.Attack?.AttackDamage}");
         }
-        else if (_frameCount >= 130)
+        else if (_frameCount == 250)
+        {
+            GD.Print($"[TestOperator] Buff 到期后攻击力: {_op1.Attack?.AttackDamage}（应还原为 38）, HasBuff={BuffManager.Instance.HasBuff(_op1, BuffType.Attack)}");
+        }
+        else if (_frameCount >= 260)
         {
             GD.Print("[TestOperator] 测试完成");
             GetTree().Quit();

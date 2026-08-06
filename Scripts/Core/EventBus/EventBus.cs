@@ -1,4 +1,5 @@
 using Godot;
+using OutpostProtocol.Data;
 
 namespace OutpostProtocol.Core.EventBus;
 
@@ -123,6 +124,18 @@ public partial class EventBus : Node
     /// <summary>当前选中干员变化</summary>
     [Signal]
     public delegate void SelectedOperatorChangedEventHandler(Node2D op);
+
+    // ============================================================
+    // 10. Buff 信号
+    // ============================================================
+
+    /// <summary>Buff 生效</summary>
+    [Signal]
+    public delegate void BuffAppliedEventHandler(string buffId, BuffType type, Node2D target, float duration);
+
+    /// <summary>Buff 移除</summary>
+    [Signal]
+    public delegate void BuffRemovedEventHandler(string buffId, BuffType type, Node2D target);
 
     // ============================================================
     // 生命周期
@@ -257,6 +270,18 @@ public partial class EventBus : Node
     public void EmitSelectedOperatorChanged(Node2D op)
     {
         EmitSignal(SignalName.SelectedOperatorChanged, op);
+    }
+
+    /// <summary>触发 Buff 生效</summary>
+    public void EmitBuffApplied(string buffId, BuffType type, Node2D target, float duration)
+    {
+        EmitSignal(SignalName.BuffApplied, buffId, (int)type, target, duration);
+    }
+
+    /// <summary>触发 Buff 移除</summary>
+    public void EmitBuffRemoved(string buffId, BuffType type, Node2D target)
+    {
+        EmitSignal(SignalName.BuffRemoved, buffId, (int)type, target);
     }
 }
 
