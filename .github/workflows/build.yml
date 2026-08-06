@@ -1,0 +1,72 @@
+name: Build Game
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  GODOT_VERSION: 4.3
+  PROJECT_PATH: .
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup Godot
+        uses: firebelley/godot-export@v5
+        with:
+          godot_version: ${{ env.GODOT_VERSION }}
+          export_template_version: ${{ env.GODOT_VERSION }}
+
+      - name: Build Windows
+        run: |
+          mkdir -p build/windows
+          godot --headless --export-release "Windows Desktop" build/windows/OutpostProtocol.exe
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: build/windows/
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup Godot
+        uses: firebelley/godot-export@v5
+        with:
+          godot_version: ${{ env.GODOT_VERSION }}
+          export_template_version: ${{ env.GODOT_VERSION }}
+
+      - name: Build Linux
+        run: |
+          mkdir -p build/linux
+          godot --headless --export-release "Linux/X11" build/linux/OutpostProtocol.x86_64
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: build/linux/
