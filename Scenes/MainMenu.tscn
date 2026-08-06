@@ -1,0 +1,57 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/MainMenuController.cs" id="1_menu"]
+
+[node name="MainMenu" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.1, 0.18, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MenuContainer" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/MenuContainer"]
+text = "废土前哨协议"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 48
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/MenuContainer"]
+text = "Arknights: Outpost Protocol"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+
+[node name="Separator1" type="HSeparator" parent="CenterContainer/MenuContainer"]
+
+[node name="NewGameButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(240, 48)
+text = "🆕 新游戏"
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(240, 48)
+text = "📂 继续游戏"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(240, 48)
+text = "⚙️ 设置"
+
+[node name="Separator2" type="HSeparator" parent="CenterContainer/MenuContainer"]
+
+[node name="QuitButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(240, 48)
+text = "🚪 退出"
+
+[node name="VersionLabel" type="Label" parent="CenterContainer/MenuContainer"]
+text = "v0.1.0"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.55, 0.55, 0.6, 1)
