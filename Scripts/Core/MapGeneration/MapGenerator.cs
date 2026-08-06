@@ -204,6 +204,7 @@ public class MapGenerator
         var type = RollBuildingType();
         var building = new BuildingData
         {
+            Id = map.Buildings.Count,
             Bounds = rect,
             Type = type,
         };

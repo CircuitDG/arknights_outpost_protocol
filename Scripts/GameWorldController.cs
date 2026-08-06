@@ -9,6 +9,7 @@ using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
+using System.Collections.Generic;
 
 /// <summary>
 /// 主世界初始化控制器
@@ -22,6 +23,7 @@ public partial class GameWorldController : Node2D
     private TowerBuilder _builder;
     private EnemySpawner _spawner;
     private bool _restoreStarted;
+    private readonly Dictionary<Vector2I, bool> _savedResourceCollected = new();
 
     /// <summary>分块加载器（供测试/调试读取）</summary>
     public ChunkLoader ChunkLoader { get; private set; }
@@ -34,6 +36,8 @@ public partial class GameWorldController : Node2D
 
     public override void _Ready()
     {
+        AddToGroup("game_world");
+
         _grid = GridManager.Instance;
         _builder = GetNode<TowerBuilder>("TowerBuilder");
         _spawner = GetNode<EnemySpawner>("EnemySpawner");
@@ -48,7 +52,6 @@ public partial class GameWorldController : Node2D
         SetupChunkLoader(tileSet); // 视觉图层按块加载
 
         PlacePlayerAndOutpost();
-        SpawnResourceNodes();
 
         // 移除场景预设的小测试资源点（城市地图改为程序化分布）
         GetNodeOrNull<Node2D>("World/Gatherable_1")?.QueueFree();
@@ -101,14 +104,33 @@ public partial class GameWorldController : Node2D
         var tileSet = new TileSet { TileSize = new Vector2I(TileSize, TileSize) };
         var atlas = new TileSetAtlasSource
         {
-            Texture = GD.Load<Texture2D>("res://icon.svg"),
+            Texture = GD.Load<Texture2D>("res://Assets/Art/tilemap.png"),
             TextureRegionSize = new Vector2I(TileSize, TileSize),
         };
 
-        atlas.CreateTile(new Vector2I(0, 0));
-        atlas.CreateTile(new Vector2I(1, 0));
+        atlas.CreateTile(MapTiles.Grass);
+        atlas.CreateTile(MapTiles.Wall);
+        atlas.CreateTile(MapTiles.Street);
+        atlas.CreateTile(MapTiles.Floor);
         tileSet.AddSource(atlas, 0);
         return tileSet;
+    }
+
+    /// <summary>应用建筑损坏状态并刷新网格/分块视觉</summary>
+    public void ApplyBuildingStates(IEnumerable<BuildingStateRecord> states)
+    {
+        if (MapData == null || states == null) return;
+
+        foreach (var record in states)
+        {
+            if (record.BuildingId >= 0 && record.BuildingId < MapData.Buildings.Count)
+            {
+                MapData.Buildings[record.BuildingId].State = (BuildingState)record.State;
+            }
+        }
+
+        _grid.BuildGridFromMap(MapData);
+        ChunkLoader?.RebuildAll();
     }
 
     private void SetupChunkLoader(TileSet tileSet)
@@ -125,7 +147,13 @@ public partial class GameWorldController : Node2D
             AutoUnload = false,
             FollowTarget = GetNode<Node2D>("World/Doctor"),
         };
-        loader.Setup(MapData, tileSet, container);
+        loader.Setup(
+            MapData,
+            tileSet,
+            container,
+            GD.Load<PackedScene>("res://Scenes/World/GatherableResource.tscn"),
+            cell => _savedResourceCollected.TryGetValue(cell, out bool collected) && collected
+        );
         AddChild(loader);
         ChunkLoader = loader;
 
@@ -175,27 +203,10 @@ public partial class GameWorldController : Node2D
         GetNode<Node2D>("World/Operator_2").GlobalPosition = spawnWorld + new Vector2(0, TileSize);
     }
 
-    private void SpawnResourceNodes()
+    /// <summary>查询资源点是否在存档中标记为已搜索</summary>
+    public bool IsResourceCollected(Vector2I cell)
     {
-        var container = GetNodeOrNull<Node2D>("World/ResourceContainer");
-        if (container == null)
-        {
-            container = new Node2D { Name = "ResourceContainer" };
-            GetNode<Node2D>("World").AddChild(container);
-        }
-
-        var prefab = GD.Load<PackedScene>("res://Scenes/World/GatherableResource.tscn");
-        foreach (var point in MapData.ResourcePoints)
-        {
-            var node = prefab.Instantiate<GatherableResource>();
-            node.ItemId = point.ItemId;
-            node.AmountPerGather = point.Amount;
-            node.MaxAmount = point.Amount;
-            node.EnableRespawn = false; // 建筑内搜索点一次性
-            node.MapCell = point.Position;
-            container.AddChild(node);
-            node.GlobalPosition = _grid.GridToWorld(point.Position);
-        }
+        return _savedResourceCollected.TryGetValue(cell, out bool collected) && collected;
     }
 
     // ============================================================
@@ -207,6 +218,17 @@ public partial class GameWorldController : Node2D
         var sm = SaveManager.Instance;
         var run = sm?.CurrentRun;
         if (run == null) return;
+
+        // 预载资源点状态（分块生成时按此判定）
+        _savedResourceCollected.Clear();
+        foreach (var state in run.ResourceStates)
+        {
+            if (state.Collected)
+            {
+                _savedResourceCollected[new Vector2I(state.GridX, state.GridY)] = true;
+            }
+        }
+        GD.Print($"[GameWorld] 存档资源状态: {_savedResourceCollected.Count} 个");
 
         var doctor = GetNodeOrNull<Doctor>("World/Doctor");
         if (doctor != null)
@@ -246,21 +268,8 @@ public partial class GameWorldController : Node2D
             tower.RestoreFromRuntime(rt);
         }
 
-        // 资源点状态恢复（已搜索的保持隐藏）
-        foreach (var state in run.ResourceStates)
-        {
-            if (!state.Collected) continue;
-            foreach (var node in GetTree().GetNodesInGroup("gatherable_resources"))
-            {
-                if (node is GatherableResource resource &&
-                    resource.MapCell.X == state.GridX &&
-                    resource.MapCell.Y == state.GridY)
-                {
-                    resource.RestoreCollected();
-                    break;
-                }
-            }
-        }
+        // 建筑损坏状态恢复（会触发网格重建 + 分块重载，资源节点随块按存档状态生成）
+        ApplyBuildingStates(run.BuildingStates);
 
         sm.RestoreOnGameLoad = false;
         GD.Print($"[GameWorld] 对局恢复完成 — Day {run.DayCount}, 干员:{run.Operators.Count}, 塔:{run.Towers.Count}");

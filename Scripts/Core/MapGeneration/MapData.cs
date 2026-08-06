@@ -13,6 +13,23 @@ public enum BuildingType
     Ruin, // 废墟
 }
 
+/// <summary>建筑损坏状态</summary>
+public enum BuildingState
+{
+    Intact, // 完好
+    Damaged, // 受损（墙壁仍在）
+    Collapsed, // 坍塌（墙壁移除，变为可行走废墟）
+}
+
+/// <summary>地图瓦片图集坐标</summary>
+public static class MapTiles
+{
+    public static readonly Vector2I Grass = new(0, 0);
+    public static readonly Vector2I Street = new(3, 0);
+    public static readonly Vector2I Wall = new(1, 0);
+    public static readonly Vector2I Floor = new(4, 0);
+}
+
 /// <summary>房间类型</summary>
 public enum RoomType
 {
@@ -34,8 +51,10 @@ public class RoomData
 /// <summary>建筑数据</summary>
 public class BuildingData
 {
+    public int Id;
     public Rect2I Bounds;
     public BuildingType Type;
+    public BuildingState State = BuildingState.Intact;
     public Vector2I Entrance;
     public List<RoomData> Rooms = new();
 }
@@ -90,5 +109,27 @@ public class MapData
     public bool IsWalkableCell(int x, int y)
     {
         return IsValidCell(x, y) && !IsWall(x, y);
+    }
+
+    /// <summary>该格是否阻挡移动（坍塌建筑的墙不再阻挡）</summary>
+    public bool IsBlocked(int x, int y)
+    {
+        if (!IsWall(x, y)) return false;
+        var building = GetBuildingAt(x, y);
+        return building == null || building.State != BuildingState.Collapsed;
+    }
+
+    /// <summary>获取包含该格的建筑（建筑不重叠，返回唯一归属）</summary>
+    public BuildingData GetBuildingAt(int x, int y)
+    {
+        var cell = new Vector2I(x, y);
+        foreach (var building in Buildings)
+        {
+            if (building.Bounds.HasPoint(cell))
+            {
+                return building;
+            }
+        }
+        return null;
     }
 }

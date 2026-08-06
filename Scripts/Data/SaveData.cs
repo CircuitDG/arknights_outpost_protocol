@@ -86,6 +86,9 @@ public class RunSave
 
     [JsonPropertyName("resourceStates")]
     public List<ResourceState> ResourceStates { get; set; } = new();
+
+    [JsonPropertyName("buildingStates")]
+    public List<BuildingStateRecord> BuildingStates { get; set; } = new();
 }
 
 // ============================================================
@@ -166,6 +169,16 @@ public class ResourceState
 
     [JsonPropertyName("collected")]
     public bool Collected { get; set; }
+}
+
+/// <summary>建筑损坏状态记录</summary>
+public class BuildingStateRecord
+{
+    [JsonPropertyName("buildingId")]
+    public int BuildingId { get; set; }
+
+    [JsonPropertyName("state")]
+    public int State { get; set; } // BuildingState 枚举值
 }
 
 // ============================================================

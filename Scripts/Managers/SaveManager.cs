@@ -406,6 +406,21 @@ public partial class SaveManager : Node
             }
         }
 
+        // 3.6 建筑损坏状态
+        _currentRun.BuildingStates.Clear();
+        var gameWorld = GetTree().GetFirstNodeInGroup("game_world") as GameWorldController;
+        if (gameWorld?.MapData != null)
+        {
+            foreach (var building in gameWorld.MapData.Buildings)
+            {
+                _currentRun.BuildingStates.Add(new BuildingStateRecord
+                {
+                    BuildingId = building.Id,
+                    State = (int)building.State,
+                });
+            }
+        }
+
         // 4. 游戏状态
         var gameManager = GameManager.Instance;
         if (gameManager != null)

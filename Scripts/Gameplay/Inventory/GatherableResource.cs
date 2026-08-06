@@ -1,5 +1,6 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Data;
 using OutpostProtocol.Managers;
 using OutpostProtocol.UI.Controllers;
 
@@ -41,6 +42,7 @@ public partial class GatherableResource : Node2D
     private bool _isCollected;
     private bool _isRespawning;
     private Tween _respawnTween;
+    private ItemData _itemData;
 
     public int Remaining => _remaining;
     public bool IsCollected => _isCollected;
@@ -66,6 +68,10 @@ public partial class GatherableResource : Node2D
         _originalPosition = GlobalPosition;
         _detectionArea = GetNodeOrNull<Area2D>("DetectionArea");
         _sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+        if (DataManager.Instance.IsLoaded)
+        {
+            _itemData = DataManager.Instance.GetItem(ItemId);
+        }
 
         AddToGroup("gatherable_resources");
 
@@ -90,6 +96,13 @@ public partial class GatherableResource : Node2D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+
+        // DataManager 异步加载完成后补取物品图标
+        if (_itemData == null && DataManager.Instance.IsLoaded)
+        {
+            _itemData = DataManager.Instance.GetItem(ItemId);
+            UpdateVisuals();
+        }
 
         // 重生计时
         if (_isRespawning)
@@ -239,10 +252,23 @@ public partial class GatherableResource : Node2D
     {
         if (_sprite == null) return;
 
+        // 已采空/已恢复为已搜索 → 保持隐藏
         if (_remaining <= 0)
         {
             Visible = false;
             return;
+        }
+
+        // 优先使用配置的物品图标
+        if (_itemData != null && !string.IsNullOrEmpty(_itemData.IconPath) && ResourceLoader.Exists(_itemData.IconPath))
+        {
+            var texture = ResourceLoader.Load<Texture2D>(_itemData.IconPath);
+            if (texture != null)
+            {
+                _sprite.Texture = texture;
+                _sprite.Scale = new Vector2(0.5f, 0.5f);
+                return;
+            }
         }
 
         Visible = true;

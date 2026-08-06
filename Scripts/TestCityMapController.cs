@@ -40,7 +40,7 @@ public partial class TestCityMapController : Node
             GD.Print($"[TestCityMap] 出生点可行走:{startOk}, 前哨站可行走:{endOk}, A*路径点数:{path.Count}");
 
             int resourceNodes = GetTree().GetNodesInGroup("gatherable_resources").Count;
-            GD.Print($"[TestCityMap] 场景资源节点: {resourceNodes}");
+            GD.Print($"[TestCityMap] 已加载资源节点: {resourceNodes}（按块实例化，全图 {gw.ResourcePointCount}）");
         }
         else if (_frameCount == 82)
         {
@@ -62,7 +62,7 @@ public partial class TestCityMapController : Node
         else if (_frameCount == 100)
         {
             var gw = GetNode<GameWorldController>("../Main");
-            GD.Print($"[TestCityMap] 传送后: 中心={gw.ChunkLoader?.CenterChunk}, 已加载={gw.ChunkLoader?.ActiveChunkCount}");
+            GD.Print($"[TestCityMap] 传送后: 中心={gw.ChunkLoader?.CenterChunk}, 已加载={gw.ChunkLoader?.ActiveChunkCount}, 资源节点={GetTree().GetNodesInGroup("gatherable_resources").Count}");
         }
         else if (_frameCount >= 110)
         {

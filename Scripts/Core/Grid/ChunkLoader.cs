@@ -1,5 +1,7 @@
 using Godot;
 using OutpostProtocol.Core.MapGeneration;
+using OutpostProtocol.Gameplay.Inventory;
+using System;
 using System.Collections.Generic;
 
 namespace OutpostProtocol.Core.Grid;
@@ -21,6 +23,8 @@ public partial class ChunkLoader : Node
     private MapData _mapData;
     private TileSet _tileSet;
     private Node2D _chunkContainer;
+    private PackedScene _resourceScene;
+    private Func<Vector2I, bool> _isResourceCollected;
     private readonly Dictionary<Vector2I, Node2D> _loadedChunks = new();
     private Vector2I _lastCenterChunk = new(int.MinValue, int.MinValue);
 
@@ -28,11 +32,14 @@ public partial class ChunkLoader : Node
     public Vector2I CenterChunk => _lastCenterChunk;
 
     /// <summary>初始化（地图数据 + 瓦片集 + 容器）</summary>
-    public void Setup(MapData mapData, TileSet tileSet, Node2D container)
+    public void Setup(MapData mapData, TileSet tileSet, Node2D container,
+        PackedScene resourceScene = null, Func<Vector2I, bool> isResourceCollected = null)
     {
         _mapData = mapData;
         _tileSet = tileSet;
         _chunkContainer = container;
+        _resourceScene = resourceScene;
+        _isResourceCollected = isResourceCollected;
     }
 
     public override void _Process(double delta)
@@ -100,6 +107,11 @@ public partial class ChunkLoader : Node
         chunk.AddChild(ground);
         chunk.AddChild(obstacle);
 
+        // 先挂进场景树（子节点 _Ready 立即执行），再生成资源，
+        // 保证 RestoreCollected 在 _Ready 之后生效，不会被 _Ready 重置。
+        _chunkContainer.AddChild(chunk);
+        _loadedChunks[chunkPos] = chunk;
+
         for (int lx = 0; lx < ChunkSize; lx++)
         {
             for (int ly = 0; ly < ChunkSize; ly++)
@@ -108,16 +120,51 @@ public partial class ChunkLoader : Node
                 int wy = chunkPos.Y * ChunkSize + ly;
                 if (!_mapData.IsValidCell(wx, wy)) continue;
 
-                ground.SetCell(new Vector2I(lx, ly), 0, new Vector2I(0, 0));
-                if (_mapData.IsWall(wx, wy))
+                Vector2I groundTile = _mapData.Ground[wx, wy] == 1
+                    ? MapTiles.Street
+                    : _mapData.Building[wx, wy] == 2
+                        ? MapTiles.Floor
+                        : MapTiles.Grass;
+                ground.SetCell(new Vector2I(lx, ly), 0, groundTile);
+                if (_mapData.IsBlocked(wx, wy))
                 {
-                    obstacle.SetCell(new Vector2I(lx, ly), 0, new Vector2I(1, 0));
+                    obstacle.SetCell(new Vector2I(lx, ly), 0, MapTiles.Wall);
                 }
             }
         }
 
-        _chunkContainer.AddChild(chunk);
-        _loadedChunks[chunkPos] = chunk;
+        // 该块内的资源点随块实例化
+        if (_resourceScene != null)
+        {
+            foreach (var point in _mapData.ResourcePoints)
+            {
+                if (point.Position.X / ChunkSize != chunkPos.X ||
+                    point.Position.Y / ChunkSize != chunkPos.Y)
+                {
+                    continue;
+                }
+
+                var node = _resourceScene.Instantiate<GatherableResource>();
+                if (node == null) continue;
+
+                node.ItemId = point.ItemId;
+                node.AmountPerGather = point.Amount;
+                node.MaxAmount = point.Amount;
+                node.EnableRespawn = false; // 建筑内搜索点一次性
+                node.MapCell = point.Position;
+
+                chunk.AddChild(node);
+                node.GlobalPosition = new Vector2(
+                    (point.Position.X + 0.5f) * 16f,
+                    (point.Position.Y + 0.5f) * 16f
+                );
+
+                if (_isResourceCollected?.Invoke(point.Position) == true)
+                {
+                    node.RestoreCollected();
+                }
+            }
+        }
         GD.Print($"[ChunkLoader] 加载块: {chunkPos}");
     }
 
@@ -142,5 +189,16 @@ public partial class ChunkLoader : Node
             Mathf.FloorToInt(worldPos.X / chunkPixelSize),
             Mathf.FloorToInt(worldPos.Y / chunkPixelSize)
         );
+    }
+
+    /// <summary>重建所有已加载块（建筑状态变化后刷新视觉）</summary>
+    public void RebuildAll()
+    {
+        foreach (var node in _loadedChunks.Values)
+        {
+            node.QueueFree();
+        }
+        _loadedChunks.Clear();
+        _lastCenterChunk = new Vector2I(int.MinValue, int.MinValue); // 下一帧按当前中心重新加载
     }
 }

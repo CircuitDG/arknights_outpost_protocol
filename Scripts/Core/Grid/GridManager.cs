@@ -156,7 +156,7 @@ public partial class GridManager : Node2D
         {
             for (int y = 0; y < map.Height; y++)
             {
-                bool walkable = !map.IsWall(x, y);
+                bool walkable = !map.IsBlocked(x, y);
                 _walkableGrid[x, y] = walkable;
                 if (walkable) walkableCount++;
             }
