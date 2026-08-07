@@ -313,58 +313,87 @@ public partial class EnemySpawner : Node
         return true;
     }
 
-    /// <summary>获取生成位置（优先地图边缘可行走格，回退随机可行走格/屏幕边缘）</summary>
+    /// <summary>获取生成位置（优先前哨站周围环形可行走格，再地图边缘，最后随机，始终限制在地图内）</summary>
     private Vector2 GetSpawnPosition(string spawnPoint)
     {
         var grid = GridManager.Instance;
+        if (grid == null || !grid.IsBuilt)
+        {
+            return ClampToMap(TargetPoint?.GlobalPosition ?? new Vector2(2400, 2400));
+        }
+
+        var dims = grid.GridDimensions;
+        Vector2I coreCell = TargetPoint != null
+            ? grid.WorldToGrid(TargetPoint.GlobalPosition)
+            : new Vector2I(dims.X / 2, dims.Y / 2);
+
+        // 1) 前哨站周围环形可行走格（约 288~640 像素），保证敌人出现后能尽快接近
+        var candidates = new List<Vector2I>();
+        for (int dx = -45; dx <= 45; dx++)
+        {
+            for (int dy = -45; dy <= 45; dy++)
+            {
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                if (dist < 18f || dist > 40f) continue;
+
+                var cell = new Vector2I(coreCell.X + dx, coreCell.Y + dy);
+                if (cell.X < 0 || cell.Y < 0 || cell.X >= dims.X || cell.Y >= dims.Y) continue;
+                if (grid.IsWalkable(cell)) candidates.Add(cell);
+            }
+        }
+        if (candidates.Count > 0)
+        {
+            return ClampToMap(grid.GridToWorld(candidates[(int)(GD.Randi() % (uint)candidates.Count)]));
+        }
+
+        // 2) 地图边缘可行走格
+        candidates.Clear();
+        for (int x = 0; x < dims.X; x++)
+        {
+            if (grid.IsWalkable(new Vector2I(x, 0))) candidates.Add(new Vector2I(x, 0));
+            if (grid.IsWalkable(new Vector2I(x, dims.Y - 1))) candidates.Add(new Vector2I(x, dims.Y - 1));
+        }
+        for (int y = 0; y < dims.Y; y++)
+        {
+            if (grid.IsWalkable(new Vector2I(0, y))) candidates.Add(new Vector2I(0, y));
+            if (grid.IsWalkable(new Vector2I(dims.X - 1, y))) candidates.Add(new Vector2I(dims.X - 1, y));
+        }
+        if (candidates.Count > 0)
+        {
+            return ClampToMap(grid.GridToWorld(candidates[(int)(GD.Randi() % (uint)candidates.Count)]));
+        }
+
+        // 3) 随机可行走格（始终在地图内）
+        for (int attempt = 0; attempt < 300; attempt++)
+        {
+            var cell = new Vector2I(
+                (int)(GD.Randi() % (uint)dims.X),
+                (int)(GD.Randi() % (uint)dims.Y)
+            );
+            if (grid.IsWalkable(cell))
+            {
+                return ClampToMap(grid.GridToWorld(cell));
+            }
+        }
+
+        // 4) 兜底：前哨站所在格
+        return ClampToMap(grid.GridToWorld(coreCell));
+    }
+
+    /// <summary>把出生点限制在地图范围内，避免生成到地图外</summary>
+    private Vector2 ClampToMap(Vector2 pos)
+    {
+        var grid = GridManager.Instance;
+        float size = 4800f;
         if (grid != null && grid.IsBuilt)
         {
             var dims = grid.GridDimensions;
-            var candidates = new List<Vector2I>();
-
-            for (int x = 0; x < dims.X; x++)
-            {
-                if (grid.IsWalkable(new Vector2I(x, 0))) candidates.Add(new Vector2I(x, 0));
-                if (grid.IsWalkable(new Vector2I(x, dims.Y - 1))) candidates.Add(new Vector2I(x, dims.Y - 1));
-            }
-            for (int y = 0; y < dims.Y; y++)
-            {
-                if (grid.IsWalkable(new Vector2I(0, y))) candidates.Add(new Vector2I(0, y));
-                if (grid.IsWalkable(new Vector2I(dims.X - 1, y))) candidates.Add(new Vector2I(dims.X - 1, y));
-            }
-
-            if (candidates.Count > 0)
-            {
-                return grid.GridToWorld(candidates[(int)(GD.Randi() % (uint)candidates.Count)]);
-            }
-
-            // 边缘全被堵住时：随机可行走格
-            for (int attempt = 0; attempt < 50; attempt++)
-            {
-                var cell = new Vector2I(
-                    (int)(GD.Randi() % (uint)dims.X),
-                    (int)(GD.Randi() % (uint)dims.Y)
-                );
-                if (grid.IsWalkable(cell))
-                {
-                    return grid.GridToWorld(cell);
-                }
-            }
+            size = Mathf.Max(dims.X, dims.Y) * grid.GridSize;
         }
-
-        // 回退：屏幕边缘外
-        var viewport = GetViewport();
-        if (viewport != null)
-        {
-            var rect = viewport.GetVisibleRect();
-            float edge = GD.Randf();
-            if (edge < 0.25f) return new Vector2(rect.Position.X - 100, rect.Position.Y + GD.Randf() * rect.Size.Y);
-            if (edge < 0.5f) return new Vector2(rect.Position.X + rect.Size.X + 100, rect.Position.Y + GD.Randf() * rect.Size.Y);
-            if (edge < 0.75f) return new Vector2(rect.Position.X + GD.Randf() * rect.Size.X, rect.Position.Y - 100);
-            return new Vector2(rect.Position.X + GD.Randf() * rect.Size.X, rect.Position.Y + rect.Size.Y + 100);
-        }
-
-        return new Vector2(960, 540);
+        return new Vector2(
+            Mathf.Clamp(pos.X, grid?.GridSize * 0.5f ?? 8f, size - (grid?.GridSize * 0.5f ?? 8f)),
+            Mathf.Clamp(pos.Y, grid?.GridSize * 0.5f ?? 8f, size - (grid?.GridSize * 0.5f ?? 8f))
+        );
     }
 
     /// <summary>获取当前正在生成的敌人配置</summary>

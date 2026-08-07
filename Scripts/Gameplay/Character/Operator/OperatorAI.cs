@@ -153,7 +153,13 @@ public partial class OperatorAI : Node
         // 超出攻击范围则靠近，进入射程后停下开火
         if (dist > _operator.Attack.AttackRange - AttackRangeOffset)
         {
-            _operator.MoveTo(target.GlobalPosition);
+            // 节流：只有未在移动或目标明显移动时才重新寻路，避免每帧异步寻路互相覆盖
+            if (!_operator.IsMoving ||
+                _operator.Movement == null ||
+                _operator.Movement.TargetPosition.DistanceTo(target.GlobalPosition) > 24f)
+            {
+                _operator.MoveTo(target.GlobalPosition);
+            }
         }
         else
         {

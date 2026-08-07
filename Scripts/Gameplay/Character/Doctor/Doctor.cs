@@ -179,6 +179,13 @@ public partial class Doctor : CharacterBody2D
     {
         if (_isDead || InputLock.IsLocked) return;
 
+        // 建设期：点击由 TowerBuilder 处理（选塔/放置/取消），博士不消费鼠标事件
+        if (GameManager.Instance?.CurrentState == GameState.Build &&
+            @event is InputEventMouseButton)
+        {
+            return;
+        }
+
         if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Right)
         {
             if (GetViewport().GuiGetHoveredControl() != null) return;
@@ -302,6 +309,13 @@ public partial class Doctor : CharacterBody2D
         float dt = (float)GetPhysicsProcessDeltaTime();
         var grid = GridManager.Instance;
         if (grid == null || !grid.IsBuilt)
+        {
+            GlobalPosition += Velocity * dt;
+            return;
+        }
+
+        // 脱困保护：当前位置不在可行走格上时（如建筑状态变化导致），允许自由移动直到回到路面
+        if (!IsWalkableAt(grid, GlobalPosition))
         {
             GlobalPosition += Velocity * dt;
             return;
@@ -629,6 +643,31 @@ public partial class Doctor : CharacterBody2D
                 GD.Print($"[Doctor] 点击选择干员: {op.EntityName}");
                 return;
             }
+        }
+
+        // 扩大命中判定：点击头像附近（48px）也能选中，避免小碰撞圆导致点不中
+        OutpostProtocol.Gameplay.Character.Operator.Operator nearest = null;
+        float bestDist = 48f;
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is not OutpostProtocol.Gameplay.Character.Operator.Operator op ||
+                op.IsDead ||
+                op.State == OperatorState.Down)
+            {
+                continue;
+            }
+            float dist = op.GlobalPosition.DistanceTo(worldPos);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                nearest = op;
+            }
+        }
+        if (nearest != null)
+        {
+            SelectOperator(nearest);
+            GD.Print($"[Doctor] 头像附近选择干员: {nearest.EntityName}");
+            return;
         }
 
         // 点击空地：有选中干员时直接指挥移动；否则清空选择

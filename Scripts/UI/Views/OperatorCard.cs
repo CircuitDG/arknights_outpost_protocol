@@ -38,7 +38,7 @@ public partial class OperatorCard : Control
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Stop;
-        CustomMinimumSize = new Vector2(172, 54);
+        CustomMinimumSize = new Vector2(176, 58);
         MouseEntered += OnMouseEntered;
         MouseExited += OnMouseExited;
         GuiInput += OnGuiInput;
@@ -57,7 +57,7 @@ public partial class OperatorCard : Control
         mainRow.SetAnchorsPreset(LayoutPreset.FullRect);
         mainRow.OffsetLeft = 4;
         mainRow.OffsetTop = 3;
-        mainRow.OffsetRight = -4;
+        mainRow.OffsetRight = -30; // 右侧预留技能角标空间，避免文字/进度条重叠
         mainRow.OffsetBottom = -3;
         mainRow.AddThemeConstantOverride("separation", 5);
         mainRow.MouseFilter = MouseFilterEnum.Ignore;
@@ -65,9 +65,10 @@ public partial class OperatorCard : Control
 
         _avatar = new TextureRect
         {
-            CustomMinimumSize = new Vector2(36, 36),
+            CustomMinimumSize = new Vector2(40, 40),
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
             MouseFilter = MouseFilterEnum.Ignore,
         };
         var avatarTex = GD.Load<Texture2D>(OutpostProtocol.Gameplay.Character.Operator.Operator.GetAvatarPath(op.OperatorDataId));
@@ -128,7 +129,7 @@ public partial class OperatorCard : Control
         var skillCorner = new Control
         {
             CustomMinimumSize = new Vector2(24, 24),
-            Position = new Vector2(-28, 1),
+            Position = new Vector2(-30, 3),
             Size = new Vector2(24, 24),
             MouseFilter = MouseFilterEnum.Ignore,
         };
@@ -168,19 +169,18 @@ public partial class OperatorCard : Control
         _skillReadyLabel.AddThemeFontSizeOverride("font_size", 9);
         skillCorner.AddChild(_skillReadyLabel);
 
-        // 底部 CD 进度条
+        // CD 进度条：作为信息列容器子项，随卡片高度自适应，不与其他元素重叠
         _cdBar = new ProgressBar
         {
-            Position = new Vector2(4, 50),
-            Size = new Vector2(164, 3),
             MaxValue = 100,
             Value = 0,
             ShowPercentage = false,
             MouseFilter = MouseFilterEnum.Ignore,
         };
+        _cdBar.CustomMinimumSize = new Vector2(0, 4);
         _cdBar.AddThemeStyleboxOverride("background", CdBackground);
         _cdBar.AddThemeStyleboxOverride("fill", CdReadyFill);
-        AddChild(_cdBar);
+        infoCol.AddChild(_cdBar);
 
         Refresh();
     }

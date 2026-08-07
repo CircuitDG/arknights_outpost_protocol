@@ -109,6 +109,7 @@ mouse_filter = 2
 [node name="Root" type="Control" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 theme = ExtResource("2_theme")
 
 [node name="TopLeftPanel" type="Panel" parent="Root"]
@@ -423,8 +424,9 @@ horizontal_alignment = 1
 
 [node name="HelpText" type="Label" parent="Root/HelpPanel/HelpVBox"]
 text = "WASD 移动 | Shift 冲刺 | E 交互 | 滚轮 缩放地图
-左键 点击/框选干员 | 右键 指挥 | F1-F4 释放技能
-建设期：点击左下角防御塔选择，地图左键放置
+左键 点击干员选中 → 再点地面移动 | 右键 也可指挥 | F1-F4 释放技能
+左键 拖拽框选干员 | 点击博士 取消选择
+建设期：点击左下角防御塔选择，地图左键放置，右键取消（纯鼠标操作）
 数字键 1-9 物品栏 | B 背包 | M 全屏地图 | T 天赋 | H 帮助 | O 设置
 夜晚视野会缩小，靠近干员和防御塔才能看清路面"
 theme_override_colors/font_color = Color(0.84, 0.78, 0.64, 1)

@@ -35,8 +35,10 @@ public static class AStarPathfinder
         Vector2I start = grid.WorldToGrid(startWorld);
         Vector2I end = grid.WorldToGrid(endWorld);
 
-        // 起点或终点不可行走 → 返回空路径
-        if (!grid.IsWalkable(start) || !grid.IsWalkable(end))
+        // 起点/终点不可行走时吸附到最近可行走格，避免单位被软排斥推上墙后卡死
+        start = FindNearestWalkable(grid, start);
+        end = FindNearestWalkable(grid, end);
+        if (start.X < 0 || end.X < 0)
             return new List<Vector2>();
 
         // 如果起点等于终点，直接返回
@@ -116,6 +118,46 @@ public static class AStarPathfinder
         int dx = Math.Abs(a.X - b.X);
         int dy = Math.Abs(a.Y - b.Y);
         return Math.Max(dx, dy) + 0.414f * Math.Min(dx, dy);
+    }
+
+    /// <summary>查找距离指定格最近的可行走格（BFS，半径 8 格）</summary>
+    private static Vector2I FindNearestWalkable(GridManager grid, Vector2I cell, int maxRadius = 8)
+    {
+        if (grid.IsWalkable(cell)) return cell;
+
+        var dims = grid.GridDimensions;
+        var visited = new HashSet<Vector2I>();
+        var queue = new Queue<Vector2I>();
+        queue.Enqueue(cell);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!visited.Add(current)) continue;
+
+            int dist = Math.Max(Math.Abs(current.X - cell.X), Math.Abs(current.Y - cell.Y));
+            if (dist > maxRadius) continue;
+
+            foreach (var offset in new[]
+            {
+                new Vector2I(1, 0), new Vector2I(-1, 0),
+                new Vector2I(0, 1), new Vector2I(0, -1),
+            })
+            {
+                var next = new Vector2I(current.X + offset.X, current.Y + offset.Y);
+                if (next.X < 0 || next.Y < 0 || next.X >= dims.X || next.Y >= dims.Y) continue;
+                if (grid.IsWalkable(next))
+                {
+                    return next;
+                }
+                if (!visited.Contains(next))
+                {
+                    queue.Enqueue(next);
+                }
+            }
+        }
+
+        return new Vector2I(-1, -1);
     }
 
     /// <summary>重建路径（从终点回溯到起点）</summary>

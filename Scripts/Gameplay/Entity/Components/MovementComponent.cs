@@ -35,6 +35,7 @@ public partial class MovementComponent : Node2D
     private bool _isMoving;
     private Vector2 _targetPosition;
     private Node2D _owner;
+    private int _moveRequestId;
 
     // ============================================================
     // 公共属性
@@ -98,10 +99,12 @@ public partial class MovementComponent : Node2D
             return;
         }
 
+        _moveRequestId++; // 作废旧寻路任务，防止旧路径覆盖新指令
+        int requestId = _moveRequestId;
         _targetPosition = target;
 
         // 异步寻路
-        _ = FindPathAsync(target);
+        _ = FindPathAsync(target, requestId);
     }
 
     /// <summary>沿指定路径移动（预设路径）</summary>
@@ -128,13 +131,14 @@ public partial class MovementComponent : Node2D
     /// <summary>停止移动</summary>
     public void Stop()
     {
+        _moveRequestId++; // 作废所有挂起的寻路任务
         _isMoving = false;
         _currentPath.Clear();
         _pathIndex = 0;
     }
 
     /// <summary>异步寻路并跟随</summary>
-    private async System.Threading.Tasks.Task FindPathAsync(Vector2 target)
+    private async System.Threading.Tasks.Task FindPathAsync(Vector2 target, int requestId)
     {
         var grid = GridManager.Instance;
         if (grid == null) return;
@@ -148,6 +152,9 @@ public partial class MovementComponent : Node2D
         // 切换到主线程应用路径
         Callable.From(() =>
         {
+            // 过期指令：期间已下达新的移动/停止，直接忽略
+            if (requestId != _moveRequestId) return;
+
             if (path.Count > 0)
             {
                 FollowPath(path);
