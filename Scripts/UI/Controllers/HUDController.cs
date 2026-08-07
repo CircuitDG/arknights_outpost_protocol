@@ -8,7 +8,6 @@ using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
 using OutpostProtocol.UI.Views;
 using System.Collections.Generic;
-using System.Text;
 
 namespace OutpostProtocol.UI.Controllers;
 
@@ -25,6 +24,7 @@ public partial class HUDController : Node
     private Label _resourceLabel;
     private Label _dayLabel;
     private Label _phaseLabel;
+    private Label _phaseTimeLabel;
     private ProgressBar _phaseBar;
     private Label _waveLabel;
     private Label _phaseNotice;
@@ -34,11 +34,6 @@ public partial class HUDController : Node
     private ProgressBar _coreHealthBar;
     private Label _coreStatusLabel;
     private OutpostCore _outpostCore;
-    private Control _helpPanel;
-    private Button _helpToggleButton;
-    private Button _helpCloseButton;
-    private Button _settingsToggleButton;
-    private Control _settingsPanel;
 
     // 干员卡牌（右侧竖排）
     private VBoxContainer _operatorCardContainer;
@@ -60,9 +55,16 @@ public partial class HUDController : Node
     private InventoryPanel _inventoryPanel;
 
     // 悬停详情
-    private Panel _tooltipPanel;
+    private PanelContainer _tooltipPanel;
     private Label _tooltipTitle;
-    private Label _tooltipLabel;
+    private Label _tooltipHp;
+    private Label _tooltipAtk;
+    private Label _tooltipDef;
+    private Label _tooltipMorale;
+    private Label _tooltipState;
+    private Label _tooltipSkill;
+    private Label _tooltipDesc;
+    private Label _tooltipReady;
     private OperatorCard _hoveredCard;
     private OperatorCard _pendingCard;
     private float _hoverTimer;
@@ -86,6 +88,7 @@ public partial class HUDController : Node
         _resourceLabel = GetNode<Label>("../Root/TopLeftVBox/ResourceLabel");
         _dayLabel = GetNode<Label>("../Root/CenterTopHBox/DayLabel");
         _phaseLabel = GetNode<Label>("../Root/CenterTopHBox/PhaseLabel");
+        _phaseTimeLabel = GetNode<Label>("../Root/CenterTopHBox/PhaseTimeLabel");
         _phaseBar = GetNode<ProgressBar>("../Root/CenterTopHBox/PhaseBar");
         _waveLabel = GetNode<Label>("../Root/CenterTopHBox/WaveLabel");
         _phaseNoticePanel = GetNodeOrNull<Control>("../Root/PhaseNoticePanel");
@@ -93,25 +96,23 @@ public partial class HUDController : Node
         _coreHealthLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreHealthLabel");
         _coreHealthBar = GetNodeOrNull<ProgressBar>("../Root/TopLeftVBox/CoreHealthBar");
         _coreStatusLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreStatusLabel");
-        _helpPanel = GetNodeOrNull<Control>("../Root/HelpPanel");
-        _helpToggleButton = GetNodeOrNull<Button>("../Root/HelpToggleButton");
-        _helpCloseButton = GetNodeOrNull<Button>("../Root/HelpPanel/HelpVBox/HelpCloseButton");
-        _settingsToggleButton = GetNodeOrNull<Button>("../Root/SettingsToggleButton");
-        _settingsPanel = GetNodeOrNull<Control>("../../UICanvas/SettingsPanel");
-
         _operatorCardContainer = GetNode<VBoxContainer>("../Root/OperatorCardsScroll/OperatorCardContainer");
         _hotbarContainer = GetNode<HBoxContainer>("../Root/HotbarContainer");
         _backpackButton = GetNode<Button>("../Root/HotbarContainer/BackpackButton");
         _inventoryPanel = GetNodeOrNull<InventoryPanel>("../Root/InventoryPanel");
-        _tooltipPanel = GetNodeOrNull<Panel>("../Root/TooltipPanel");
-        _tooltipTitle = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipTitle");
-        _tooltipLabel = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipLabel");
+        _tooltipPanel = GetNodeOrNull<PanelContainer>("../Root/TooltipPanel");
+        _tooltipTitle = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipTitle");
+        _tooltipHp = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipGrid/TooltipHPLabel");
+        _tooltipAtk = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipGrid/TooltipATKLabel");
+        _tooltipDef = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipGrid/TooltipDEFLabel");
+        _tooltipMorale = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipGrid/TooltipMoraleLabel");
+        _tooltipState = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipStateLabel");
+        _tooltipSkill = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipSkillLabel");
+        _tooltipDesc = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipDescLabel");
+        _tooltipReady = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipReadyLabel");
 
         FindOutpostCore();
 
-        if (_helpToggleButton != null) _helpToggleButton.Pressed += ToggleHelp;
-        if (_helpCloseButton != null) _helpCloseButton.Pressed += ToggleHelp;
-        if (_settingsToggleButton != null) _settingsToggleButton.Pressed += ToggleSettings;
         if (_backpackButton != null) _backpackButton.Pressed += ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed += OnInventoryClosed;
 
@@ -163,9 +164,6 @@ public partial class HUDController : Node
         eb.SkillCast -= OnSkillCast;
         eb.SkillCooldownUpdated -= OnSkillCooldownUpdated;
 
-        if (_helpToggleButton != null) _helpToggleButton.Pressed -= ToggleHelp;
-        if (_helpCloseButton != null) _helpCloseButton.Pressed -= ToggleHelp;
-        if (_settingsToggleButton != null) _settingsToggleButton.Pressed -= ToggleSettings;
         if (_backpackButton != null) _backpackButton.Pressed -= ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed -= OnInventoryClosed;
 
@@ -282,6 +280,7 @@ public partial class HUDController : Node
         // 显示在卡牌左侧，避免与右侧列表、底部物品栏重叠
         Vector2 cardPos = card.GlobalPosition;
         var vpSize = GetViewport().GetVisibleRect().Size;
+        _tooltipPanel.ResetSize();
         float x = Mathf.Clamp(cardPos.X - _tooltipPanel.Size.X - 14, 8, Mathf.Max(8, vpSize.X - _tooltipPanel.Size.X - 8));
         float y = Mathf.Clamp(cardPos.Y, 8, Mathf.Max(8, vpSize.Y - _tooltipPanel.Size.Y - 8));
         _tooltipPanel.Position = new Vector2(x, y);
@@ -294,10 +293,9 @@ public partial class HUDController : Node
 
     private void UpdateTooltip(OperatorCard card)
     {
-        if (_tooltipPanel == null || _tooltipLabel == null || card?.Operator == null) return;
+        if (_tooltipPanel == null || card?.Operator == null) return;
 
         var op = card.Operator;
-        var sb = new StringBuilder();
         int maxHp = op.Health?.MaxHealth ?? 0;
         int curHp = op.Health?.CurrentHealth ?? 0;
 
@@ -305,34 +303,44 @@ public partial class HUDController : Node
         {
             _tooltipTitle.Text = $"[{op.EntityName}] Lv.{op.CurrentLevel} · {op.Data?.ClassType ?? "未知职业"}";
         }
-
-        sb.AppendLine($"HP: {curHp}/{maxHp}   ATK: {op.Attack?.AttackDamage ?? 0}");
-        sb.AppendLine($"防御: {op.Data?.BaseDefense ?? 0}   心情: {op.Morale}/100");
-        sb.AppendLine($"状态: {GetOperatorStateText(op)}");
-        sb.AppendLine();
-        sb.AppendLine("── 技能 ──");
+        if (_tooltipHp != null) _tooltipHp.Text = $"生命 {curHp}/{maxHp}";
+        if (_tooltipAtk != null) _tooltipAtk.Text = $"攻击 {op.Attack?.AttackDamage ?? 0}";
+        if (_tooltipDef != null) _tooltipDef.Text = $"防御 {op.Data?.BaseDefense ?? 0}";
+        if (_tooltipMorale != null) _tooltipMorale.Text = $"心情 {op.Morale}/100";
+        if (_tooltipState != null) _tooltipState.Text = $"状态: {GetOperatorStateText(op)}";
 
         var skill = op.Skill?.GetSkill(1);
         if (skill != null)
         {
-            sb.AppendLine($"{skill.Name}   冷却 {skill.Cooldown:F1}s   体力 {skill.StaminaCost:F0}");
-            sb.AppendLine(skill.Description);
-            if (op.Skill.IsSkillReady(1))
+            if (_tooltipSkill != null)
             {
-                sb.AppendLine("状态: ✅ 就绪（F1 释放）");
+                _tooltipSkill.Text = $"技能: {skill.Name}   冷却 {skill.Cooldown:F1}s   体力 {skill.StaminaCost:F0}";
             }
-            else
+            if (_tooltipDesc != null) _tooltipDesc.Text = skill.Description;
+            if (_tooltipReady != null)
             {
-                float progress = op.Skill.GetCooldownProgress(1);
-                sb.AppendLine($"状态: ⏳ 冷却中 {skill.Cooldown * progress:F1}s");
+                if (op.Skill.IsSkillReady(1))
+                {
+                    _tooltipReady.Text = "状态: ✅ 就绪（F1 释放）";
+                    _tooltipReady.AddThemeColorOverride("font_color", new Color(0.55f, 0.9f, 0.5f));
+                }
+                else
+                {
+                    float progress = op.Skill.GetCooldownProgress(1);
+                    _tooltipReady.Text = $"状态: ⏳ 冷却中 {skill.Cooldown * progress:F1}s";
+                    _tooltipReady.AddThemeColorOverride("font_color", new Color(0.95f, 0.7f, 0.35f));
+                }
             }
         }
         else
         {
-            sb.AppendLine("未绑定技能");
+            if (_tooltipSkill != null) _tooltipSkill.Text = "技能: 未绑定";
+            if (_tooltipDesc != null) _tooltipDesc.Text = "";
+            if (_tooltipReady != null)
+            {
+                _tooltipReady.Text = "";
+            }
         }
-
-        _tooltipLabel.Text = sb.ToString();
     }
 
     private void HideTooltip()
@@ -526,16 +534,6 @@ public partial class HUDController : Node
         }
     }
 
-    private void ToggleHelp()
-    {
-        if (_helpPanel != null) _helpPanel.Visible = !_helpPanel.Visible;
-    }
-
-    private void ToggleSettings()
-    {
-        if (_settingsPanel != null) _settingsPanel.Visible = !_settingsPanel.Visible;
-    }
-
     public override void _UnhandledInput(InputEvent @event)
     {
         // 背包打开时优先处理关闭
@@ -558,14 +556,6 @@ public partial class HUDController : Node
             {
                 case Key.T:
                     GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
-                    GetViewport().SetInputAsHandled();
-                    return;
-                case Key.H:
-                    ToggleHelp();
-                    GetViewport().SetInputAsHandled();
-                    return;
-                case Key.O:
-                    ToggleSettings();
                     GetViewport().SetInputAsHandled();
                     return;
                 case Key.B:
@@ -685,6 +675,10 @@ public partial class HUDController : Node
     {
         _phaseBar.MaxValue = 100;
         _phaseBar.Value = Mathf.Clamp(progress * 100f, 0, 100);
+        if (_phaseTimeLabel != null)
+        {
+            _phaseTimeLabel.Text = FormatPhaseTime(phase, progress);
+        }
     }
 
     private void OnWaveStarted(int waveNumber)
@@ -747,6 +741,15 @@ public partial class HUDController : Node
         var gm = GameManager.Instance;
         _dayLabel.Text = gm != null ? $"Day {gm.DayCount}" : "Day 1";
         _phaseLabel.Text = GetPhaseText(gm?.CurrentState ?? GameState.Explore);
+        if (gm != null)
+        {
+            _phaseBar.MaxValue = 100;
+            _phaseBar.Value = Mathf.Clamp(gm.PhaseProgress * 100f, 0, 100);
+            if (_phaseTimeLabel != null)
+            {
+                _phaseTimeLabel.Text = FormatPhaseTime(gm.CurrentPhase, gm.PhaseProgress);
+            }
+        }
 
         RefreshResources();
         RefreshWave();
@@ -811,6 +814,26 @@ public partial class HUDController : Node
             GameState.GameOver => "游戏结束",
             _ => "加载中",
         };
+    }
+
+    /// <summary>把阶段进度格式化为时间（当前时间 / 阶段结束时间）</summary>
+    private static string FormatPhaseTime(DayPhase phase, float progress)
+    {
+        (float start, float end) = phase switch
+        {
+            DayPhase.Dawn => (5f, 7f),
+            DayPhase.Morning => (7f, 12f),
+            DayPhase.Afternoon => (12f, 17f),
+            DayPhase.Dusk => (17f, 21f),
+            DayPhase.Night => (21f, 29f), // 21:00 → 次日 05:00
+            _ => (0f, 24f),
+        };
+
+        float t = start + (end - start) * Mathf.Clamp(progress, 0f, 1f);
+        int hour = ((int)t) % 24;
+        int minute = (int)((t - (int)t) * 60f);
+        int endHour = ((int)end) % 24;
+        return $"{hour:00}:{minute:00} / {endHour:00}:00";
     }
 
     private static StyleBoxFlat CreateHotbarStyle(Color bg, Color border)

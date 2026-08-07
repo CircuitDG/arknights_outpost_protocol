@@ -34,7 +34,7 @@ public partial class OperatorCard : Control
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Stop;
-        CustomMinimumSize = new Vector2(200, 64);
+        CustomMinimumSize = new Vector2(172, 54);
         MouseEntered += OnMouseEntered;
         MouseExited += OnMouseExited;
         GuiInput += OnGuiInput;
@@ -51,17 +51,17 @@ public partial class OperatorCard : Control
 
         var mainRow = new HBoxContainer();
         mainRow.SetAnchorsPreset(LayoutPreset.FullRect);
-        mainRow.OffsetLeft = 5;
-        mainRow.OffsetTop = 4;
-        mainRow.OffsetRight = -5;
-        mainRow.OffsetBottom = -4;
-        mainRow.AddThemeConstantOverride("separation", 6);
+        mainRow.OffsetLeft = 4;
+        mainRow.OffsetTop = 3;
+        mainRow.OffsetRight = -4;
+        mainRow.OffsetBottom = -3;
+        mainRow.AddThemeConstantOverride("separation", 5);
         mainRow.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(mainRow);
 
         _avatar = new TextureRect
         {
-            CustomMinimumSize = new Vector2(44, 44),
+            CustomMinimumSize = new Vector2(36, 36),
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             MouseFilter = MouseFilterEnum.Ignore,
@@ -81,13 +81,13 @@ public partial class OperatorCard : Control
             Text = op.EntityName,
             MouseFilter = MouseFilterEnum.Ignore,
         };
-        _nameLabel.AddThemeFontSizeOverride("font_size", 13);
+        _nameLabel.AddThemeFontSizeOverride("font_size", 12);
         _nameLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.9f, 0.76f));
         infoCol.AddChild(_nameLabel);
 
         _hpBar = new ProgressBar
         {
-            CustomMinimumSize = new Vector2(92, 8),
+            CustomMinimumSize = new Vector2(76, 6),
             MaxValue = 100,
             ShowPercentage = false,
             MouseFilter = MouseFilterEnum.Ignore,
@@ -108,7 +108,7 @@ public partial class OperatorCard : Control
             Text = "HP --/--",
             MouseFilter = MouseFilterEnum.Ignore,
         };
-        _hpLabel.AddThemeFontSizeOverride("font_size", 10);
+        _hpLabel.AddThemeFontSizeOverride("font_size", 9);
         _hpLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.86f, 0.68f));
         infoCol.AddChild(_hpLabel);
 
@@ -117,15 +117,15 @@ public partial class OperatorCard : Control
             Text = "",
             MouseFilter = MouseFilterEnum.Ignore,
         };
-        _statusLabel.AddThemeFontSizeOverride("font_size", 10);
+        _statusLabel.AddThemeFontSizeOverride("font_size", 9);
         infoCol.AddChild(_statusLabel);
 
-        // 技能角标：右上角 28x28
+        // 技能角标：右上角 24x24
         var skillCorner = new Control
         {
-            CustomMinimumSize = new Vector2(28, 28),
-            Position = new Vector2(-32, 2),
-            Size = new Vector2(28, 28),
+            CustomMinimumSize = new Vector2(24, 24),
+            Position = new Vector2(-28, 1),
+            Size = new Vector2(24, 24),
             MouseFilter = MouseFilterEnum.Ignore,
         };
         AddChild(skillCorner);
@@ -133,7 +133,7 @@ public partial class OperatorCard : Control
         _skillIcon = new TextureRect
         {
             Position = new Vector2(0, 0),
-            Size = new Vector2(28, 28),
+            Size = new Vector2(24, 24),
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             MouseFilter = MouseFilterEnum.Ignore,
@@ -143,7 +143,7 @@ public partial class OperatorCard : Control
         _skillCooldown = new TextureProgressBar
         {
             Position = new Vector2(0, 0),
-            Size = new Vector2(28, 28),
+            Size = new Vector2(24, 24),
             MaxValue = 100,
             Value = 0,
             FillMode = (int)TextureProgressBar.FillModeEnum.Clockwise,
@@ -155,13 +155,13 @@ public partial class OperatorCard : Control
 
         _skillReadyLabel = new Label
         {
-            Position = new Vector2(0, 14),
-            Size = new Vector2(28, 12),
+            Position = new Vector2(0, 11),
+            Size = new Vector2(24, 11),
             Text = "",
             HorizontalAlignment = HorizontalAlignment.Center,
             MouseFilter = MouseFilterEnum.Ignore,
         };
-        _skillReadyLabel.AddThemeFontSizeOverride("font_size", 10);
+        _skillReadyLabel.AddThemeFontSizeOverride("font_size", 9);
         skillCorner.AddChild(_skillReadyLabel);
 
         Refresh();

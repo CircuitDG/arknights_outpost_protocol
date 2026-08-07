@@ -85,6 +85,16 @@ public partial class TalentTreeController : Control
         }
     }
 
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!Visible) return;
+        if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Escape)
+        {
+            Hide();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     // ============================================================
     // 构建天赋树
     // ============================================================
@@ -130,11 +140,16 @@ public partial class TalentTreeController : Control
         {
             if (!branches.TryGetValue(branch, out var talentList)) continue;
 
-            _branchContainer.AddChild(new Label
+            var branchLabel = new Label
             {
                 Text = branchNames.GetValueOrDefault(branch, branch),
                 Modulate = branchColors.GetValueOrDefault(branch, Colors.White),
-            });
+            };
+            branchLabel.AddThemeFontSizeOverride("font_size", 18);
+            branchLabel.AddThemeConstantOverride("outline_size", 4);
+            branchLabel.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.55f));
+            branchLabel.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            _branchContainer.AddChild(branchLabel);
 
             var cards = new List<TalentCard>();
             var cardById = new Dictionary<string, TalentCard>();
@@ -161,6 +176,7 @@ public partial class TalentTreeController : Control
 
             var graph = new TalentTreeGraph();
             graph.Setup(cards, edges);
+            graph.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
             _branchContainer.AddChild(graph);
 
             _branchContainer.AddChild(new HSeparator());
@@ -178,6 +194,14 @@ public partial class TalentTreeController : Control
         _profile = SaveManager.Instance?.Profile;
         if (_profile == null) return;
         _profile.TalentLevels ??= new Dictionary<string, int>();
+
+        // 修复：数据加载完成前打开面板时，先补建天赋树
+        if (!_treeBuilt && DataManager.Instance != null && DataManager.Instance.IsLoaded)
+        {
+            _dataReady = true;
+            _treeBuilt = true;
+            BuildTalentTree();
+        }
 
         UpdateAll();
         Show();
