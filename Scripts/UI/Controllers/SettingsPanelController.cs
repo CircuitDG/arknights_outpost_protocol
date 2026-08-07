@@ -12,11 +12,13 @@ public partial class SettingsPanelController : Control
     private readonly string[] _actions =
     {
         "move_up", "move_down", "move_left", "move_right", "sprint", "interact",
+        "select_next", "talent", "backpack",
     };
 
     private readonly string[] _actionNames =
     {
         "向上", "向下", "向左", "向右", "冲刺", "交互",
+        "切换干员", "天赋树", "背包",
     };
 
     private HSlider _masterSlider;
@@ -26,9 +28,9 @@ public partial class SettingsPanelController : Control
     private Button _closeButton;
     private Label _captureLabel;
 
-    private readonly Label[] _keyLabels = new Label[6];
-    private readonly Button[] _rebindButtons = new Button[6];
-    private readonly Button[] _clearButtons = new Button[6];
+    private readonly Label[] _keyLabels = new Label[9];
+    private readonly Button[] _rebindButtons = new Button[9];
+    private readonly Button[] _clearButtons = new Button[9];
     private int _capturingIndex = -1;
 
     public override void _Ready()
@@ -42,9 +44,9 @@ public partial class SettingsPanelController : Control
 
         for (int i = 0; i < _actions.Length; i++)
         {
-            _keyLabels[i] = GetNodeOrNull<Label>($"Panel/MainContainer/KeyRows/KeyRow_{i + 1}/KeyLabel");
-            _rebindButtons[i] = GetNodeOrNull<Button>($"Panel/MainContainer/KeyRows/KeyRow_{i + 1}/RebindButton");
-            _clearButtons[i] = GetNodeOrNull<Button>($"Panel/MainContainer/KeyRows/KeyRow_{i + 1}/ClearButton");
+            _keyLabels[i] = GetNodeOrNull<Label>($"Panel/MainContainer/KeyScroll/KeyRows/KeyRow_{i + 1}/KeyLabel");
+            _rebindButtons[i] = GetNodeOrNull<Button>($"Panel/MainContainer/KeyScroll/KeyRows/KeyRow_{i + 1}/RebindButton");
+            _clearButtons[i] = GetNodeOrNull<Button>($"Panel/MainContainer/KeyScroll/KeyRows/KeyRow_{i + 1}/ClearButton");
 
             if (_rebindButtons[i] != null)
             {

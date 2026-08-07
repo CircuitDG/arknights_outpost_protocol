@@ -34,6 +34,8 @@ public partial class HUDController : Node
     private ProgressBar _coreHealthBar;
     private Label _coreStatusLabel;
     private OutpostCore _outpostCore;
+    private Button _settingsToggleButton;
+    private Control _settingsPanel;
 
     // 干员卡牌（右侧竖排）
     private VBoxContainer _operatorCardContainer;
@@ -110,11 +112,14 @@ public partial class HUDController : Node
         _tooltipSkill = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipSkillLabel");
         _tooltipDesc = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipDescLabel");
         _tooltipReady = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipReadyLabel");
+        _settingsToggleButton = GetNodeOrNull<Button>("../Root/SettingsToggleButton");
+        _settingsPanel = GetNodeOrNull<Control>("../../UICanvas/SettingsPanel");
 
         FindOutpostCore();
 
         if (_backpackButton != null) _backpackButton.Pressed += ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed += OnInventoryClosed;
+        if (_settingsToggleButton != null) _settingsToggleButton.Pressed += ToggleSettings;
 
         BuildHotbar();
 
@@ -166,6 +171,7 @@ public partial class HUDController : Node
 
         if (_backpackButton != null) _backpackButton.Pressed -= ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed -= OnInventoryClosed;
+        if (_settingsToggleButton != null) _settingsToggleButton.Pressed -= ToggleSettings;
 
         HideTooltip();
     }
@@ -245,8 +251,18 @@ public partial class HUDController : Node
         foreach (var card in _operatorCards)
         {
             card.Refresh();
-            card.SetSelected(card.Operator == _selectedOperator);
+            card.SetSelected(IsOperatorSelected(card.Operator));
         }
+    }
+
+    private bool IsOperatorSelected(Operator op)
+    {
+        if (_doctor == null || op == null) return false;
+        foreach (var selected in _doctor.SelectedOperators)
+        {
+            if (selected == op) return true;
+        }
+        return false;
     }
 
     private void OnCardSelected(OperatorCard card)
@@ -534,34 +550,57 @@ public partial class HUDController : Node
         }
     }
 
+    private void ToggleSettings()
+    {
+        if (_settingsPanel != null)
+        {
+            _settingsPanel.Visible = !_settingsPanel.Visible;
+        }
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
-        // 背包打开时优先处理关闭
-        if (@event is InputEventKey invKey && invKey.Pressed)
+        if (@event is InputEventKey keyEvt && keyEvt.Pressed)
         {
+            // 背包打开时优先处理关闭
             if (_inventoryPanel != null && _inventoryPanel.Visible)
             {
-                if (invKey.Keycode == Key.B || invKey.Keycode == Key.Escape)
+                if (keyEvt.IsActionPressed("backpack") || keyEvt.Keycode == Key.Escape)
                 {
                     _inventoryPanel.SetOpen(false);
                     GetViewport().SetInputAsHandled();
                 }
                 return;
             }
-        }
 
-        if (@event is InputEventKey keyEvt && keyEvt.Pressed)
-        {
-            switch (keyEvt.Keycode)
+            // 设置面板打开时 Esc 关闭
+            if (_settingsPanel != null && _settingsPanel.Visible)
             {
-                case Key.T:
-                    GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
+                if (keyEvt.Keycode == Key.Escape || keyEvt.IsActionPressed("talent"))
+                {
+                    _settingsPanel.Visible = false;
                     GetViewport().SetInputAsHandled();
-                    return;
-                case Key.B:
-                    ToggleInventory();
-                    GetViewport().SetInputAsHandled();
-                    return;
+                }
+                return;
+            }
+
+            if (keyEvt.IsActionPressed("talent"))
+            {
+                GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+            if (keyEvt.IsActionPressed("backpack"))
+            {
+                ToggleInventory();
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+            if (keyEvt.Keycode == Key.O)
+            {
+                ToggleSettings();
+                GetViewport().SetInputAsHandled();
+                return;
             }
         }
 

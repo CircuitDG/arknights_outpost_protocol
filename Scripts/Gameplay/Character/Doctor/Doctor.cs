@@ -1,5 +1,6 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Core.Grid;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Inventory;
@@ -52,6 +53,11 @@ public partial class Doctor : CharacterBody2D
     private Vector2 _velocity = Vector2.Zero;
     private bool _isSprinting;
     private bool _isDead;
+    private bool _isBoxSelecting;
+    private Vector2 _selectionStartScreen;
+    private readonly List<OutpostProtocol.Gameplay.Character.Operator.Operator> _selectedOperators = new();
+    private CanvasLayer _selectionLayer;
+    private ColorRect _selectionBox;
 
     // ============================================================
     // 组件引用
@@ -75,6 +81,7 @@ public partial class Doctor : CharacterBody2D
     public bool IsSprinting => _isSprinting;
     public bool IsDead => _isDead;
     public Vector2 FacingDirection { get; private set; } = Vector2.Down;
+    public IReadOnlyList<OutpostProtocol.Gameplay.Character.Operator.Operator> SelectedOperators => _selectedOperators;
 
     // ============================================================
     // 生命周期
@@ -90,6 +97,17 @@ public partial class Doctor : CharacterBody2D
         _staminaRegenTimer = GetNode<Timer>("StaminaRegenTimer");
         _sprite = GetNode<Sprite2D>("Sprite2D");
         Backpack = GetNodeOrNull<Backpack>("Backpack");
+
+        // 框选辅助层（屏幕坐标）
+        _selectionLayer = new CanvasLayer { Layer = 40 };
+        AddChild(_selectionLayer);
+        _selectionBox = new ColorRect
+        {
+            Color = new Color(0.3f, 0.7f, 1f, 0.18f),
+            Visible = false,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        _selectionLayer.AddChild(_selectionBox);
 
         // 加入博士组，供采集点/塔/生成器查询
         AddToGroup("doctor");
@@ -125,8 +143,8 @@ public partial class Doctor : CharacterBody2D
         // 2. 更新朝向
         UpdateFacingDirection();
 
-        // 3. 移动并碰撞检测
-        MoveAndSlide();
+        // 3. 移动 + 墙体碰撞（按网格可行走判定，与干员一致）
+        ApplyGridMovement();
 
         // 4. 限制在地图边界内
         GlobalPosition = new Vector2(
@@ -137,37 +155,81 @@ public partial class Doctor : CharacterBody2D
         // 4. 体力逻辑由 StaminaRegenTimer 驱动
     }
 
+    public override void _Process(double delta)
+    {
+        // 框选时更新选择框（屏幕坐标）
+        if (!_isBoxSelecting || _selectionBox == null) return;
+
+        Vector2 current = GetViewport().GetMousePosition();
+        Vector2 topLeft = new(
+            Mathf.Min(_selectionStartScreen.X, current.X),
+            Mathf.Min(_selectionStartScreen.Y, current.Y)
+        );
+        Vector2 size = new(
+            Mathf.Abs(current.X - _selectionStartScreen.X),
+            Mathf.Abs(current.Y - _selectionStartScreen.Y)
+        );
+        _selectionBox.Position = topLeft;
+        _selectionBox.Size = size;
+        _selectionBox.Visible = size.Length() > 1f;
+    }
+
     public override void _Input(InputEvent @event)
     {
         if (_isDead) return;
 
         if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Right)
         {
+            if (GetViewport().GuiGetHoveredControl() != null) return;
             HandleRightClick(mouseEvent);
+            return;
+        }
+
+        if (@event is InputEventMouseButton leftDown && leftDown.Pressed && leftDown.ButtonIndex == MouseButton.Left)
+        {
+            if (GetViewport().GuiGetHoveredControl() != null) return;
+            _isBoxSelecting = true;
+            _selectionStartScreen = GetViewport().GetMousePosition();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (@event is InputEventMouseButton leftUp && !leftUp.Pressed && leftUp.ButtonIndex == MouseButton.Left && _isBoxSelecting)
+        {
+            _isBoxSelecting = false;
+            if (_selectionBox != null) _selectionBox.Visible = false;
+            FinishSelection();
+            GetViewport().SetInputAsHandled();
+            return;
         }
 
         if (@event is InputEventKey keyEvent && keyEvent.Pressed)
         {
-            switch (keyEvent.Keycode)
+            if (keyEvent.IsActionPressed("interact"))
             {
-                case Key.E:
-                    TryInteract();
-                    break;
-                case Key.F1:
+                TryInteract();
+            }
+            else if (keyEvent.IsActionPressed("select_next"))
+            {
+                CycleOperator();
+            }
+            else
+            {
+                switch (keyEvent.Keycode)
+                {
+                    case Key.F1:
                     TryCastSkill(1);
                     break;
-                case Key.F2:
+                    case Key.F2:
                     TryCastSkill(2);
                     break;
-                case Key.F3:
+                    case Key.F3:
                     TryCastSkill(3);
                     break;
-                case Key.F4:
+                    case Key.F4:
                     TryCastSkill(4);
                     break;
-                case Key.Tab:
-                    CycleOperator();
-                    break;
+                }
             }
         }
     }
@@ -213,6 +275,39 @@ public partial class Doctor : CharacterBody2D
 
         // 应用速度
         Velocity = _velocity;
+    }
+
+    /// <summary>
+    /// 网格碰撞移动：按轴尝试移动，目标格不可行走则挡住（与干员寻路一致）
+    /// </summary>
+    private void ApplyGridMovement()
+    {
+        if (Velocity == Vector2.Zero) return;
+
+        float dt = (float)GetPhysicsProcessDeltaTime();
+        var grid = GridManager.Instance;
+        if (grid == null || !grid.IsBuilt)
+        {
+            GlobalPosition += Velocity * dt;
+            return;
+        }
+
+        Vector2 pos = GlobalPosition;
+
+        // X 轴
+        Vector2 candidateX = pos + new Vector2(Velocity.X * dt, 0);
+        if (IsWalkableAt(grid, candidateX)) pos = candidateX;
+
+        // Y 轴
+        Vector2 candidateY = pos + new Vector2(0, Velocity.Y * dt);
+        if (IsWalkableAt(grid, candidateY)) pos = candidateY;
+
+        GlobalPosition = pos;
+    }
+
+    private static bool IsWalkableAt(GridManager grid, Vector2 worldPos)
+    {
+        return grid.IsWalkable(grid.WorldToGrid(worldPos));
     }
 
     // ============================================================
@@ -442,9 +537,99 @@ public partial class Doctor : CharacterBody2D
     /// <summary>设置当前选中的干员</summary>
     public void SelectOperator(OutpostProtocol.Gameplay.Character.Operator.Operator op)
     {
+        _selectedOperators.Clear();
+        if (op != null && !op.IsDead && op.State != OperatorState.Down)
+        {
+            _selectedOperators.Add(op);
+        }
         _selectedOperator = op;
         EventBus.Instance.EmitSelectedOperatorChanged(op);
-        GD.Print($"[Doctor] 选中干员: {op?.EntityName ?? "无"}");
+        GD.Print($"[Doctor] 选中干员: {op?.EntityName ?? "无"}（共 {_selectedOperators.Count} 个）");
+    }
+
+    /// <summary>批量选中干员（框选）</summary>
+    public void SelectOperators(IEnumerable<OutpostProtocol.Gameplay.Character.Operator.Operator> operators)
+    {
+        _selectedOperators.Clear();
+        foreach (var op in operators)
+        {
+            if (op == null || op.IsDead || op.State == OperatorState.Down) continue;
+            if (!_selectedOperators.Contains(op)) _selectedOperators.Add(op);
+        }
+
+        _selectedOperator = _selectedOperators.Count > 0 ? _selectedOperators[^1] : null;
+        EventBus.Instance.EmitSelectedOperatorChanged(_selectedOperator);
+        GD.Print($"[Doctor] 框选干员: {_selectedOperators.Count} 个");
+    }
+
+    /// <summary>框选结束：小距离视为点击，否则按区域选择</summary>
+    private void FinishSelection()
+    {
+        Vector2 startWorld = ScreenToWorld(_selectionStartScreen);
+        Vector2 endWorld = ScreenToWorld(GetViewport().GetMousePosition());
+
+        if (startWorld.DistanceTo(endWorld) < 10f)
+        {
+            SelectOperatorAtWorld(startWorld);
+            return;
+        }
+
+        var rect = new Rect2(
+            new Vector2(Mathf.Min(startWorld.X, endWorld.X), Mathf.Min(startWorld.Y, endWorld.Y)),
+            new Vector2(Mathf.Abs(endWorld.X - startWorld.X), Mathf.Abs(endWorld.Y - startWorld.Y))
+        );
+
+        var selected = new List<OutpostProtocol.Gameplay.Character.Operator.Operator>();
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is OutpostProtocol.Gameplay.Character.Operator.Operator op &&
+                !op.IsDead &&
+                op.State != OperatorState.Down &&
+                rect.HasPoint(op.GlobalPosition))
+            {
+                selected.Add(op);
+            }
+        }
+
+        SelectOperators(selected);
+    }
+
+    /// <summary>点击世界坐标处的干员进行选择</summary>
+    private void SelectOperatorAtWorld(Vector2 worldPos)
+    {
+        var space = GetWorld2D().DirectSpaceState;
+        var query = new PhysicsPointQueryParameters2D
+        {
+            Position = worldPos,
+            CollisionMask = 1u,
+        };
+
+        var results = space.IntersectPoint(query);
+        foreach (var result in results)
+        {
+            var collider = result["collider"].As<GodotObject>();
+            if (collider is OutpostProtocol.Gameplay.Character.Operator.Operator op)
+            {
+                SelectOperator(op);
+                GD.Print($"[Doctor] 点击选择干员: {op.EntityName}");
+                return;
+            }
+        }
+
+        // 点击空地：清空选择
+        if (_selectedOperators.Count > 0)
+        {
+            SelectOperators(new List<OutpostProtocol.Gameplay.Character.Operator.Operator>());
+        }
+    }
+
+    /// <summary>屏幕坐标 → 世界坐标</summary>
+    private Vector2 ScreenToWorld(Vector2 screenPos)
+    {
+        var viewport = GetViewport();
+        var camera = viewport.GetCamera2D();
+        if (camera == null) return GlobalPosition;
+        return camera.GlobalPosition + (screenPos - viewport.GetVisibleRect().Size * 0.5f) / camera.Zoom;
     }
 
     /// <summary>轮询切换选中干员（Tab）</summary>
@@ -530,7 +715,7 @@ public partial class Doctor : CharacterBody2D
     /// <summary>指挥范围内的干员移动到目标位置</summary>
     public void CommandMoveTo(Vector2 targetPos)
     {
-        var operators = GetOperatorsInRange(CommandRange);
+        var operators = GetCommandTargets(CommandRange);
         foreach (var op in operators)
         {
             op.MoveToPosition(targetPos);
@@ -540,11 +725,23 @@ public partial class Doctor : CharacterBody2D
     /// <summary>指挥范围内的干员攻击目标</summary>
     public void CommandAttack(BaseEntity target)
     {
-        var operators = GetOperatorsInRange(AttackCommandRange);
+        var operators = GetCommandTargets(AttackCommandRange);
         foreach (var op in operators)
         {
             op.AttackTarget(target);
         }
+    }
+
+    /// <summary>
+    /// 指令目标：优先使用已选中的干员；未选中时回退到范围内的所有干员
+    /// </summary>
+    private List<OutpostProtocol.Gameplay.Character.Operator.Operator> GetCommandTargets(float fallbackRange)
+    {
+        if (_selectedOperators.Count > 0)
+        {
+            return new List<OutpostProtocol.Gameplay.Character.Operator.Operator>(_selectedOperators);
+        }
+        return GetOperatorsInRange(fallbackRange);
     }
 
     private void HandleRightClick(InputEventMouseButton mouseEvent)

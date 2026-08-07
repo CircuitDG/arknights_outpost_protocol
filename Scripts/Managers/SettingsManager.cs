@@ -26,6 +26,9 @@ public partial class SettingsManager : Node
         ["move_right"] = new List<int> { 68, 4194321 }, // D, →
         ["sprint"] = new List<int> { 4194325 }, // Shift
         ["interact"] = new List<int> { 69 }, // E
+        ["select_next"] = new List<int> { 4194306 }, // Tab
+        ["talent"] = new List<int> { 84 }, // T
+        ["backpack"] = new List<int> { 66 }, // B
     };
 
     private static readonly string[] VolumeBuses = { "Master", "Music", "SFX" };
@@ -56,6 +59,7 @@ public partial class SettingsManager : Node
         _instance = this;
 
         EnsureAudioBuses();
+        EnsureActions();
         Load();
         ApplyAll();
 
@@ -192,6 +196,18 @@ public partial class SettingsManager : Node
         foreach (var action in DefaultKeys.Keys)
         {
             ApplyBinding(action, GetActionKeys(action));
+        }
+    }
+
+    /// <summary>确保所有可绑定动作在 InputMap 中存在</summary>
+    private static void EnsureActions()
+    {
+        foreach (var action in DefaultKeys.Keys)
+        {
+            if (!InputMap.HasAction(action))
+            {
+                InputMap.AddAction(action);
+            }
         }
     }
 

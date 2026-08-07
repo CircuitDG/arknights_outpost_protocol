@@ -161,18 +161,20 @@ theme_override_colors/font_color = Color(0.62, 0.82, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 
 [node name="CenterTopPanel" type="Panel" parent="Root"]
-anchor_left = 0.18
-anchor_right = 0.82
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -390.0
 offset_top = 8.0
+offset_right = 390.0
 offset_bottom = 50.0
 mouse_filter = 2
 
 [node name="CenterTopHBox" type="HBoxContainer" parent="Root"]
-anchor_left = 0.18
-anchor_right = 0.82
-offset_left = 8.0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -382.0
 offset_top = 13.0
-offset_right = -8.0
+offset_right = 382.0
 offset_bottom = 45.0
 theme_override_constants/separation = 16
 alignment = 1
@@ -227,6 +229,15 @@ alignment = 1
 [node name="BackpackButton" type="Button" parent="Root/HotbarContainer"]
 custom_minimum_size = Vector2(52, 38)
 text = "🎒"
+
+[node name="SettingsToggleButton" type="Button" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 66.0
+offset_right = -10.0
+offset_bottom = 96.0
+text = "⚙ 设置"
 
 [node name="OperatorColumnPanel" type="Panel" parent="Root"]
 anchor_left = 1.0

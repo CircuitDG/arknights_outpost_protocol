@@ -25,11 +25,15 @@ public partial class OperatorCard : Control
     private TextureRect _skillIcon;
     private TextureProgressBar _skillCooldown;
     private Label _skillReadyLabel;
+    private ProgressBar _cdBar;
     private bool _selected;
 
     private static readonly StyleBoxFlat NormalStyle = CreateStyle(new Color(0.16f, 0.13f, 0.09f, 0.96f), new Color(0.45f, 0.35f, 0.22f, 1f));
     private static readonly StyleBoxFlat SelectedStyle = CreateStyle(new Color(0.24f, 0.19f, 0.11f, 0.98f), new Color(0.95f, 0.78f, 0.35f, 1f));
     private static readonly StyleBoxFlat DownStyle = CreateStyle(new Color(0.22f, 0.12f, 0.1f, 0.96f), new Color(0.75f, 0.3f, 0.25f, 1f));
+    private static readonly StyleBoxFlat CdReadyFill = CreateBarStyle(new Color(0.35f, 0.72f, 0.35f, 1f));
+    private static readonly StyleBoxFlat CdCoolingFill = CreateBarStyle(new Color(0.95f, 0.65f, 0.25f, 1f));
+    private static readonly StyleBoxFlat CdBackground = CreateBarStyle(new Color(0.08f, 0.07f, 0.05f, 0.9f));
 
     public override void _Ready()
     {
@@ -164,6 +168,20 @@ public partial class OperatorCard : Control
         _skillReadyLabel.AddThemeFontSizeOverride("font_size", 9);
         skillCorner.AddChild(_skillReadyLabel);
 
+        // 底部 CD 进度条
+        _cdBar = new ProgressBar
+        {
+            Position = new Vector2(4, 50),
+            Size = new Vector2(164, 3),
+            MaxValue = 100,
+            Value = 0,
+            ShowPercentage = false,
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
+        _cdBar.AddThemeStyleboxOverride("background", CdBackground);
+        _cdBar.AddThemeStyleboxOverride("fill", CdReadyFill);
+        AddChild(_cdBar);
+
         Refresh();
     }
 
@@ -195,12 +213,23 @@ public partial class OperatorCard : Control
             _skillReadyLabel.AddThemeColorOverride("font_color", ready
                 ? new Color(0.55f, 0.9f, 0.5f)
                 : new Color(0.95f, 0.7f, 0.35f));
+
+            if (_cdBar != null)
+            {
+                _cdBar.Visible = true;
+                _cdBar.Value = ready ? 100 : progress * 100;
+                _cdBar.AddThemeStyleboxOverride("fill", ready ? CdReadyFill : CdCoolingFill);
+            }
         }
         else
         {
             _skillIcon.Texture = null;
             _skillCooldown.Visible = false;
             _skillReadyLabel.Text = "-";
+            if (_cdBar != null)
+            {
+                _cdBar.Visible = false;
+            }
         }
 
         if (op.IsDead || op.State == OperatorState.Down)
@@ -251,6 +280,18 @@ public partial class OperatorCard : Control
             CornerRadiusTopRight = 4,
             CornerRadiusBottomRight = 4,
             CornerRadiusBottomLeft = 4,
+        };
+    }
+
+    private static StyleBoxFlat CreateBarStyle(Color color)
+    {
+        return new StyleBoxFlat
+        {
+            BgColor = color,
+            CornerRadiusTopLeft = 1,
+            CornerRadiusTopRight = 1,
+            CornerRadiusBottomRight = 1,
+            CornerRadiusBottomLeft = 1,
         };
     }
 
