@@ -4,32 +4,34 @@
     "name": "木材",
     "category": "Material",
     "maxStack": 99,
-    "iconPath": "res://Assets/Art/木材.webp"
+    "iconPath": "res://Assets/Art/item_wood.png"
   },
   {
     "id": 2,
     "name": "铁皮",
     "category": "Material",
     "maxStack": 99,
-    "iconPath": "res://Assets/Art/铁皮.webp"
+    "iconPath": "res://Assets/Art/item_iron.png"
   },
   {
     "id": 3,
     "name": "食物",
     "category": "Consumable",
-    "maxStack": 20
+    "maxStack": 20,
+    "iconPath": "res://Assets/Art/item_food.png"
   },
   {
     "id": 4,
     "name": "急救绷带",
     "category": "Consumable",
-    "maxStack": 10
+    "maxStack": 10,
+    "iconPath": "res://Assets/Art/item_bandage.png"
   },
   {
     "id": 5,
     "name": "源石",
     "category": "Material",
     "maxStack": 50,
-    "iconPath": "res://Assets/Art/源石.webp"
+    "iconPath": "res://Assets/Art/item_originium.png"
   }
 ]

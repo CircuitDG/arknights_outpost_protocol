@@ -3,12 +3,16 @@
 [ext_resource type="Script" path="res://Scripts/UI/Views/TalentCard.cs" id="1_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-bg_color = Color(0.15, 0.15, 0.18, 0.9)
+bg_color = Color(0.18, 0.14, 0.1, 0.95)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.4, 0.4, 0.5, 1)
+border_color = Color(0.42, 0.33, 0.21, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 
 [node name="TalentCard" type="Control"]
 custom_minimum_size = Vector2(0, 76)

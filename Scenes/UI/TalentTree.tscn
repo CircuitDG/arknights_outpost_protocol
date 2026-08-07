@@ -1,20 +1,19 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/Controllers/TalentTreeController.cs" id="1_talenttree"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
-bg_color = Color(0, 0, 0, 0.82)
+[ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="2_theme"]
 
 [node name="TalentTree" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme = ExtResource("2_theme")
 script = ExtResource("1_talenttree")
 visible = false
 
 [node name="Panel" type="Panel" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+mouse_filter = 2
 
 [node name="MainContainer" type="VBoxContainer" parent="Panel"]
 anchor_left = 0.5
@@ -30,8 +29,8 @@ offset_bottom = 230.0
 
 [node name="Title" type="Label" parent="Panel/MainContainer/TitleRow"]
 text = "🌳 天赋树"
+theme_type_variation = &"PZPanelTitle"
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 26
 
 [node name="CloseButton" type="Button" parent="Panel/MainContainer/TitleRow"]
 text = "✕"

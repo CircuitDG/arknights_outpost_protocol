@@ -27,6 +27,7 @@ public partial class HUDController : Node
     private Label _skillLabel;
     private Label _waveLabel;
     private Label _phaseNotice;
+    private Control _phaseNoticePanel;
 
     private Label _coreHealthLabel;
     private ProgressBar _coreHealthBar;
@@ -62,7 +63,8 @@ public partial class HUDController : Node
         _operatorLabel = GetNode<Label>("../Root/BottomCenterHBox/OperatorLabel");
         _skillLabel = GetNode<Label>("../Root/BottomRightVBox/SkillLabel");
         _waveLabel = GetNode<Label>("../Root/BottomLeftVBox/WaveLabel");
-        _phaseNotice = GetNode<Label>("../Root/PhaseNotice");
+        _phaseNoticePanel = GetNodeOrNull<Control>("../Root/PhaseNoticePanel");
+        _phaseNotice = GetNodeOrNull<Label>("../Root/PhaseNoticePanel/PhaseNotice");
         _coreHealthLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreHealthLabel");
         _coreHealthBar = GetNodeOrNull<ProgressBar>("../Root/TopLeftVBox/CoreHealthBar");
         _coreStatusLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreStatusLabel");
@@ -261,7 +263,7 @@ public partial class HUDController : Node
     {
         _hpBar.MaxValue = max;
         _hpBar.Value = current;
-        _hpLabel.Text = $"HP {current:F0}/{max:F0}";
+        _hpLabel.Text = $"生命 {current:F0}/{max:F0}";
     }
 
     private void OnDoctorStaminaChanged(float current, float max)
@@ -367,7 +369,7 @@ public partial class HUDController : Node
         int wood = _backpack.GetCount(Backpack.WOOD_ITEM_ID);
         int iron = _backpack.GetCount(Backpack.IRON_ITEM_ID);
         int originium = _backpack.GetCount(Backpack.ORIGINIUM_ITEM_ID);
-        _resourceLabel.Text = $"木材:{wood}  铁皮:{iron}  源石:{originium}";
+        _resourceLabel.Text = $"木材 ×{wood}  铁皮 ×{iron}  源石 ×{originium}";
     }
 
     private void RefreshOperators()
@@ -485,10 +487,15 @@ public partial class HUDController : Node
 
         _phaseNotice.Text = text;
         _phaseNotice.Visible = !string.IsNullOrEmpty(text);
+        if (_phaseNoticePanel != null)
+        {
+            _phaseNoticePanel.Visible = !string.IsNullOrEmpty(text);
+        }
 
         GetTree().CreateTimer(3.0).Timeout += () =>
         {
-            _phaseNotice.Visible = false;
+            if (_phaseNotice != null) _phaseNotice.Visible = false;
+            if (_phaseNoticePanel != null) _phaseNoticePanel.Visible = false;
         };
     }
 
