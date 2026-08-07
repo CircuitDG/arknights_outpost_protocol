@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Gameplay/Character/Doctor/Doctor.cs" id="1_doctor"]
+[ext_resource type="Texture2D" path="res://Assets/Art/Characters/doctor_token.png" id="2_icon"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/Inventory/Backpack.cs" id="3_backpack"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_doctor"]
+radius = 8.0
+
+[node name="Doctor" type="CharacterBody2D"]
+script = ExtResource("1_doctor")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_doctor")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_icon")
+scale = Vector2(1, 1)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0
+
+[node name="StaminaRegenTimer" type="Timer" parent="."]
+wait_time = 0.1
+autostart = true
+
+[node name="Backpack" type="Node" parent="."]
+script = ExtResource("3_backpack")

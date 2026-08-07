@@ -1,6 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+/addons/
 export_presets.cfg
 
 *.tmp
@@ -20,6 +21,7 @@ obj/
 .DS_Store
 Thumbs.db
 desktop.ini
+godot-ai-LICENSE.txt
 
 # 日志
 *.log

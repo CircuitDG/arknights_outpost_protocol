@@ -1,0 +1,87 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/MainMenuController.cs" id="1_menu"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SettingsPanel.tscn" id="2_settings"]
+[ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" path="res://Assets/Art/menu_bg.png" id="4_bg"]
+
+[node name="MainMenu" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("3_theme")
+script = ExtResource("1_menu")
+
+[node name="Background" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Darken" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.015, 0.01, 0.62)
+mouse_filter = 2
+
+[node name="Vignette" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.28)
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MenuPanel" type="Panel" parent="CenterContainer"]
+custom_minimum_size = Vector2(460, 590)
+mouse_filter = 2
+
+[node name="MenuContainer" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(340, 0)
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/MenuContainer"]
+theme_type_variation = &"PZTitle"
+text = "废土前哨协议"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/MenuContainer"]
+theme_type_variation = &"PZLatin"
+text = "ARKNIGHTS · OUTPOST PROTOCOL"
+horizontal_alignment = 1
+
+[node name="FlavorLabel" type="Label" parent="CenterContainer/MenuContainer"]
+text = "—— 泰拉废土生存记录 ——"
+theme_override_colors/font_color = Color(0.62, 0.56, 0.44, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+
+[node name="Separator1" type="HSeparator" parent="CenterContainer/MenuContainer"]
+
+[node name="NewGameButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(260, 52)
+text = "🆕 新游戏"
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(260, 52)
+text = "📂 继续游戏"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(260, 52)
+text = "⚙ 设置"
+
+[node name="Separator2" type="HSeparator" parent="CenterContainer/MenuContainer"]
+
+[node name="QuitButton" type="Button" parent="CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(260, 52)
+text = "🚪 退出"
+
+[node name="VersionLabel" type="Label" parent="CenterContainer/MenuContainer"]
+theme_type_variation = &"PZLatin"
+theme_override_font_sizes/font_size = 13
+text = "v0.1.0"
+horizontal_alignment = 1
+
+[node name="SettingsPanel" parent="." instance=ExtResource("2_settings")]

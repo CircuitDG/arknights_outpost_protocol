@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/UI/SettlementPanel.tscn" id="1_panel"]
+[ext_resource type="Script" path="res://Scripts/TestSettlementController.cs" id="2_controller"]
+
+[node name="TestSettlement" type="Node2D"]
+
+[node name="SettlementPanel" parent="." instance=ExtResource("1_panel")]
+AutoContinueDelay = 1.0
+
+[node name="TestSettlementController" type="Node" parent="."]
+script = ExtResource("2_controller")

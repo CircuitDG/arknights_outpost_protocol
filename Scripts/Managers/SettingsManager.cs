@@ -1,0 +1,249 @@
+using Godot;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+
+namespace OutpostProtocol.Managers;
+
+/// <summary>
+/// 设置管理器（AutoLoad 单例）
+/// 职责：音量/键位设置的持久化与应用
+/// </summary>
+public partial class SettingsManager : Node
+{
+    private static SettingsManager _instance;
+    public static SettingsManager Instance => _instance;
+
+    private const string SETTINGS_PATH = "user://settings.json";
+
+    /// <summary>默认键位（每个动作支持多键，physical keycode）</summary>
+    public static readonly Dictionary<string, List<int>> DefaultKeys = new()
+    {
+        ["move_up"] = new List<int> { 87, 4194320 }, // W, ↑
+        ["move_down"] = new List<int> { 83, 4194322 }, // S, ↓
+        ["move_left"] = new List<int> { 65, 4194319 }, // A, ←
+        ["move_right"] = new List<int> { 68, 4194321 }, // D, →
+        ["sprint"] = new List<int> { 4194325 }, // Shift
+        ["interact"] = new List<int> { 69 }, // E
+        ["select_next"] = new List<int> { 4194306 }, // Tab
+        ["talent"] = new List<int> { 84 }, // T
+        ["backpack"] = new List<int> { 66 }, // B
+    };
+
+    private static readonly string[] VolumeBuses = { "Master", "Music", "SFX" };
+    private static readonly Dictionary<string, float> DefaultVolumes = new()
+    {
+        ["Master"] = 0f,
+        ["Music"] = -6f,
+        ["SFX"] = -6f,
+    };
+
+    private GameSettings _settings = new();
+
+    /// <summary>设置数据结构（JSON 持久化）</summary>
+    public class GameSettings
+    {
+        public Dictionary<string, float> Volumes { get; set; } = new();
+        public Dictionary<string, List<int>> KeyBindings { get; set; } = new();
+    }
+
+    public override void _Ready()
+    {
+        if (_instance != null)
+        {
+            GD.PushWarning("SettingsManager 已存在，销毁重复实例");
+            QueueFree();
+            return;
+        }
+        _instance = this;
+
+        EnsureAudioBuses();
+        EnsureActions();
+        Load();
+        ApplyAll();
+
+        GD.Print("[SettingsManager] 初始化完成");
+    }
+
+    public override void _ExitTree()
+    {
+        _instance = null;
+    }
+
+    // ============================================================
+    // 音频总线
+    // ============================================================
+
+    private static void EnsureAudioBuses()
+    {
+        foreach (var bus in VolumeBuses)
+        {
+            if (AudioServer.GetBusIndex(bus) == -1)
+            {
+                AudioServer.AddBus();
+                AudioServer.SetBusName(AudioServer.BusCount - 1, bus);
+            }
+        }
+    }
+
+    // ============================================================
+    // 音量
+    // ============================================================
+
+    public float GetBusVolume(string bus)
+    {
+        return _settings.Volumes.GetValueOrDefault(bus, DefaultVolumes.GetValueOrDefault(bus, 0f));
+    }
+
+    public void SetBusVolume(string bus, float db)
+    {
+        _settings.Volumes[bus] = db;
+        int index = AudioServer.GetBusIndex(bus);
+        if (index != -1)
+        {
+            AudioServer.SetBusVolumeDb(index, db);
+        }
+        Save();
+    }
+
+    // ============================================================
+    // 键位
+    // ============================================================
+
+    /// <summary>获取动作的全部键位（physical keycode 列表）</summary>
+    public List<int> GetActionKeys(string action)
+    {
+        if (_settings.KeyBindings.TryGetValue(action, out var keys) && keys.Count > 0)
+        {
+            return new List<int>(keys);
+        }
+        return new List<int>(DefaultKeys.GetValueOrDefault(action, new List<int>()));
+    }
+
+    /// <summary>获取动作的第一个键位（兼容旧调用）</summary>
+    public int GetActionKey(string action)
+    {
+        var keys = GetActionKeys(action);
+        return keys.Count > 0 ? keys[0] : 0;
+    }
+
+    /// <summary>为动作追加一个键位（多键支持）</summary>
+    public void RebindAction(string action, int physicalKeycode)
+    {
+        var keys = GetActionKeys(action);
+        if (!keys.Contains(physicalKeycode))
+        {
+            keys.Add(physicalKeycode);
+        }
+        _settings.KeyBindings[action] = keys;
+        ApplyBinding(action, keys);
+        Save();
+    }
+
+    /// <summary>清空动作的全部键位</summary>
+    public void ClearActionKeys(string action)
+    {
+        _settings.KeyBindings[action] = new List<int>();
+        ApplyBinding(action, new List<int>());
+        Save();
+    }
+
+    private static void ApplyBinding(string action, IEnumerable<int> keycodes)
+    {
+        if (!InputMap.HasAction(action)) return;
+
+        InputMap.ActionEraseEvents(action);
+        foreach (int keycode in keycodes)
+        {
+            var keyEvent = new InputEventKey
+            {
+                PhysicalKeycode = (Key)keycode,
+                Keycode = (Key)keycode,
+            };
+            InputMap.ActionAddEvent(action, keyEvent);
+        }
+    }
+
+    // ============================================================
+    // 默认值
+    // ============================================================
+
+    public void ResetDefaults()
+    {
+        _settings.Volumes.Clear();
+        _settings.KeyBindings.Clear();
+        ApplyAll();
+        Save();
+        GD.Print("[SettingsManager] 已恢复默认设置");
+    }
+
+    // ============================================================
+    // 应用 / 持久化
+    // ============================================================
+
+    private void ApplyAll()
+    {
+        foreach (var bus in VolumeBuses)
+        {
+            int index = AudioServer.GetBusIndex(bus);
+            if (index != -1)
+            {
+                AudioServer.SetBusVolumeDb(index, GetBusVolume(bus));
+            }
+        }
+
+        foreach (var action in DefaultKeys.Keys)
+        {
+            ApplyBinding(action, GetActionKeys(action));
+        }
+    }
+
+    /// <summary>确保所有可绑定动作在 InputMap 中存在</summary>
+    private static void EnsureActions()
+    {
+        foreach (var action in DefaultKeys.Keys)
+        {
+            if (!InputMap.HasAction(action))
+            {
+                InputMap.AddAction(action);
+            }
+        }
+    }
+
+    public void Save()
+    {
+        try
+        {
+            string path = ProjectSettings.GlobalizePath(SETTINGS_PATH);
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            File.WriteAllText(path, JsonSerializer.Serialize(_settings, options));
+        }
+        catch (Exception ex)
+        {
+            GD.PushError($"[SettingsManager] 保存失败: {ex.Message}");
+        }
+    }
+
+    public void Load()
+    {
+        try
+        {
+            string path = ProjectSettings.GlobalizePath(SETTINGS_PATH);
+            if (!File.Exists(path))
+            {
+                return;
+            }
+
+            var loaded = JsonSerializer.Deserialize<GameSettings>(File.ReadAllText(path));
+            if (loaded != null)
+            {
+                _settings = loaded;
+            }
+        }
+        catch (Exception ex)
+        {
+            GD.PushError($"[SettingsManager] 加载失败: {ex.Message}");
+        }
+    }
+}

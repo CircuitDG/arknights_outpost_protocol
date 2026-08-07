@@ -1,0 +1,530 @@
+using Godot;
+using OutpostProtocol.Core.EventBus;
+using OutpostProtocol.Data;
+using OutpostProtocol.Gameplay.Building;
+using OutpostProtocol.Gameplay.Character.Doctor;
+using OutpostProtocol.Gameplay.Character.Enemy;
+using OutpostProtocol.Gameplay.Character.Operator;
+using OutpostProtocol.Gameplay.Inventory;
+using OutpostProtocol.UI.Controllers;
+using System.Collections.Generic;
+
+namespace OutpostProtocol.Managers;
+
+/// <summary>
+/// 游戏状态管理器（AutoLoad 单例）
+/// 负责：状态机切换、昼夜循环驱动、阶段计时
+/// </summary>
+public partial class GameManager : Node
+{
+    // ============================================================
+    // 单例
+    // ============================================================
+
+    private static GameManager _instance;
+
+    /// <summary>全局单例实例（AutoLoad 就绪后可用）</summary>
+    public static GameManager Instance => _instance;
+
+    // ============================================================
+    // 导出变量（可在编辑器中调整，单位：秒）
+    // ============================================================
+
+    /// <summary>探索期：6 小时 → 360 秒</summary>
+    [Export] public float ExploreDuration = 360.0f;
+
+    /// <summary>建设期：3 小时 → 180 秒</summary>
+    [Export] public float BuildDuration = 180.0f;
+
+    /// <summary>防守期：4 小时 → 240 秒</summary>
+    [Export] public float BattleDuration = 240.0f;
+
+    /// <summary>休整期：1 小时 → 60 秒</summary>
+    [Export] public float RestDuration = 60.0f;
+
+    [ExportGroup("波次配置")]
+    [Export] public bool EnableWaveSystem = true;
+
+    [ExportGroup("结算配置")]
+    [Export] public PackedScene SettlementPanelPrefab;
+
+    [ExportGroup("休整期修复")]
+    [Export] public bool AutoRepairCore = true;
+    [Export] public float RepairPercentPerRest = 0.5f; // 每次休整恢复 50%
+
+    [ExportGroup("波次难度")]
+    [Export] public int WaveLevel { get; set; } = 1;
+    [Export] public int WaveLevelPerDay = 1; // 每天增加 1
+
+    [ExportGroup("每日物资")]
+    [Export] public int DailyWood = 5;
+    [Export] public int DailyIron = 3;
+    [Export] public int DailyFood = 2;
+    [Export] public int DailyOriginium = 1;
+
+    // ============================================================
+    // 运行时状态
+    // ============================================================
+
+    private GameState _currentState = GameState.Loading;
+    private DayPhase _currentPhase = DayPhase.Dawn;
+    private float _phaseTimer;
+    private float _totalElapsed;
+    private int _dayCount = 1;
+    private EnemySpawner _enemySpawner;
+    private SettlementPanelController _settlementPanel;
+    private OutpostCore _outpostCore;
+    private GameOverReason _gameOverReason = GameOverReason.DoctorDied;
+
+    /// <summary>游戏结束原因</summary>
+    public GameOverReason GameOverReason => _gameOverReason;
+
+    /// <summary>当前阶段总时长（秒）</summary>
+    private float CurrentPhaseDuration => _currentState switch
+    {
+        GameState.Explore => ExploreDuration,
+        GameState.Build => BuildDuration,
+        GameState.Battle => BattleDuration,
+        GameState.Rest => RestDuration,
+        _ => 60.0f,
+    };
+
+    // ============================================================
+    // 公共属性
+    // ============================================================
+
+    public GameState CurrentState => _currentState;
+    public DayPhase CurrentPhase => _currentPhase;
+    public int DayCount => _dayCount;
+    public float PhaseProgress => CurrentPhaseDuration > 0f ? _phaseTimer / CurrentPhaseDuration : 0f;
+
+    // ============================================================
+    // 生命周期
+    // ============================================================
+
+    public override void _Ready()
+    {
+        if (_instance != null)
+        {
+            GD.PushWarning("GameManager 已存在，销毁重复实例");
+            QueueFree();
+            return;
+        }
+
+        _instance = this;
+        SubscribeEvents();
+        StartGame();
+    }
+
+    public override void _ExitTree()
+    {
+        UnsubscribeEvents();
+        _instance = null;
+    }
+
+    public override void _Process(double delta)
+    {
+        // GameOver 与 Loading 不驱动阶段计时
+        if (_currentState is GameState.GameOver or GameState.Loading)
+        {
+            return;
+        }
+
+        float dt = (float)delta;
+        _phaseTimer += dt;
+        _totalElapsed += dt;
+
+        // 更新昼夜进度
+        EventBus.Instance.EmitDayNightChanged(_currentPhase, PhaseProgress);
+
+        // 检查阶段是否结束
+        if (_phaseTimer >= CurrentPhaseDuration)
+        {
+            AdvancePhase();
+        }
+    }
+
+    // ============================================================
+    // 事件订阅
+    // ============================================================
+
+    private void SubscribeEvents()
+    {
+        var eb = EventBus.Instance;
+        if (eb == null)
+        {
+            GD.PushError("GameManager: EventBus 未初始化");
+            return;
+        }
+
+        // 波次系统：监听波次完成，延迟查找场景中的 EnemySpawner
+        if (EnableWaveSystem)
+        {
+            eb.WaveCompleted += OnWaveCompleted;
+            Callable.From(FindEnemySpawner).CallDeferred();
+        }
+    }
+
+    private void UnsubscribeEvents()
+    {
+        var eb = EventBus.Instance;
+        if (eb == null) return;
+        if (EnableWaveSystem)
+        {
+            eb.WaveCompleted -= OnWaveCompleted;
+        }
+    }
+
+    /// <summary>在当前场景中查找 EnemySpawner（World 下优先，其次场景根节点）</summary>
+    private void FindEnemySpawner()
+    {
+        var scene = GetTree().CurrentScene;
+        if (scene == null) return;
+
+        _enemySpawner = scene.GetNodeOrNull<Node2D>("World")?.GetNodeOrNull<EnemySpawner>("EnemySpawner");
+        _enemySpawner ??= scene.GetNodeOrNull<EnemySpawner>("EnemySpawner");
+
+        if (_enemySpawner == null)
+        {
+            GD.Print("[GameManager] 未找到 EnemySpawner，波次系统禁用");
+        }
+        else
+        {
+            GD.Print("[GameManager] EnemySpawner 已连接");
+        }
+    }
+
+    /// <summary>波次完成：若正处于防守期则提前推进到休整期</summary>
+    private void OnWaveCompleted(int waveNumber)
+    {
+        GD.Print($"[GameManager] 波次 {waveNumber} 完成，进入休整期");
+        if (_currentState == GameState.Battle)
+        {
+            _phaseTimer = BattleDuration;
+        }
+    }
+
+    // ============================================================
+    // 核心逻辑
+    // ============================================================
+
+    /// <summary>启动游戏，进入探索阶段</summary>
+    private void StartGame()
+    {
+        _dayCount = 1;
+        _currentPhase = DayPhase.Dawn;
+        SwitchState(GameState.Explore);
+        GD.Print($"[GameManager] 游戏启动 — Day {_dayCount} 开始");
+    }
+
+    /// <summary>推进到下一个阶段</summary>
+    private void AdvancePhase()
+    {
+        _phaseTimer = 0.0f;
+
+        switch (_currentState)
+        {
+            case GameState.Explore:
+                SwitchState(GameState.Build);
+                break;
+
+            case GameState.Build:
+                SwitchState(GameState.Battle);
+                break;
+
+            case GameState.Battle:
+                // 战斗结束 → 进入休整期 → 新的一天
+                _dayCount++;
+                SwitchState(GameState.Rest);
+                break;
+
+            case GameState.Rest:
+                // 休整结束 → 新的一天探索
+                SwitchState(GameState.Explore);
+                GD.Print($"[GameManager] Day {_dayCount} 开始");
+                break;
+
+            default:
+                GD.PushWarning($"[GameManager] 未处理的阶段切换: {_currentState}");
+                break;
+        }
+    }
+
+    /// <summary>切换游戏状态并广播</summary>
+    private void SwitchState(GameState newState)
+    {
+        var oldState = _currentState;
+        _currentState = newState;
+
+        // 进入休整期 → 自动修复核心
+        if (newState == GameState.Rest)
+        {
+            RepairCoreOnRest();
+            HandleDailyRest();
+        }
+
+        // 新的一天 → 波次难度提升
+        if (newState == GameState.Explore && _dayCount > 1)
+        {
+            IncreaseWaveLevel();
+            GrantDailySupplies();
+        }
+
+        // 更新对应的 DayPhase（方便 UI 显示）
+        UpdateDayPhaseForState(newState);
+
+        // 广播状态变化
+        EventBus.Instance.EmitGameStateChanged(newState);
+
+        GD.Print($"[GameManager] 状态切换: {oldState} → {newState} (Phase: {_currentPhase})");
+    }
+
+    // ============================================================
+    // 休整期核心修复
+    // ============================================================
+
+    private void RepairCoreOnRest()
+    {
+        if (!AutoRepairCore) return;
+
+        if (_outpostCore == null)
+        {
+            _outpostCore = GetOutpostCore();
+            if (_outpostCore == null) return;
+        }
+
+        if (_outpostCore.IsDestroyed) return;
+
+        int repairAmount = (int)(_outpostCore.MaxHealth * RepairPercentPerRest * (1f + TalentTreeController.CoreRepairBonus));
+        int actualRepair = _outpostCore.Repair(repairAmount);
+        if (actualRepair > 0)
+        {
+            GD.Print($"[GameManager] 休整期修复核心 +{actualRepair} HP");
+        }
+    }
+
+    private OutpostCore GetOutpostCore()
+    {
+        var core = GetTree().GetFirstNodeInGroup("outpost_core") as OutpostCore;
+        if (core != null) return core;
+
+        var world = GetTree().CurrentScene?.GetNodeOrNull<Node2D>("World");
+        if (world == null) return null;
+
+        core = world.GetNodeOrNull<OutpostCore>("OutpostCore");
+        if (core == null)
+        {
+            var target = world.GetNodeOrNull<Node2D>("TargetPoint");
+            core = target?.GetNodeOrNull<OutpostCore>("OutpostCore");
+        }
+        return core;
+    }
+
+    // ============================================================
+    // 波次难度
+    // ============================================================
+
+    private void IncreaseWaveLevel()
+    {
+        WaveLevel += WaveLevelPerDay;
+        GD.Print($"[GameManager] 波次难度提升: Level {WaveLevel}");
+        EventBus.Instance.EmitLogMessage($"波次难度提升至 Lv.{WaveLevel}", "INFO");
+    }
+
+    /// <summary>每天开始发放物资补给</summary>
+    private void GrantDailySupplies()
+    {
+        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Doctor;
+        var backpack = doctor?.GetNodeOrNull<Backpack>("Backpack");
+        if (backpack == null) return;
+
+        backpack.AddItem(Backpack.WOOD_ITEM_ID, DailyWood);
+        backpack.AddItem(Backpack.IRON_ITEM_ID, DailyIron);
+        backpack.AddItem(3, DailyFood);
+        backpack.AddItem(Backpack.ORIGINIUM_ITEM_ID, DailyOriginium);
+
+        GD.Print($"[GameManager] Day {_dayCount} 物资补给: 木材+{DailyWood} 铁皮+{DailyIron} 食物+{DailyFood} 源石+{DailyOriginium}");
+        EventBus.Instance.EmitLogMessage($"每日物资补给已发放", "INFO");
+    }
+
+    /// <summary>休整期：干员心情恢复；全员无战斗不能则信赖 +1</summary>
+    private void HandleDailyRest()
+    {
+        bool anyDown = false;
+        var operators = new List<Operator>();
+
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is not Operator op) continue;
+            operators.Add(op);
+            if (op.State == OperatorState.Down)
+            {
+                anyDown = true;
+            }
+            else
+            {
+                op.AdjustMorale(20);
+            }
+        }
+
+        var profile = SaveManager.Instance?.Profile;
+        if (profile != null && !anyDown && operators.Count > 0)
+        {
+            profile.TrustData ??= new Dictionary<int, int>();
+            foreach (var op in operators)
+            {
+                profile.TrustData[op.OperatorDataId] = profile.TrustData.GetValueOrDefault(op.OperatorDataId, 0) + 1;
+            }
+            SaveManager.Instance.SaveProfile();
+            GD.Print($"[GameManager] 全员安全度过一天，信赖 +1（{operators.Count} 名干员）");
+            EventBus.Instance.EmitLogMessage("全员安全度过一天，信赖提升", "INFO");
+        }
+        else if (anyDown)
+        {
+            GD.Print("[GameManager] 有干员战斗不能，今日不结算信赖");
+        }
+    }
+
+    /// <summary>根据游戏状态更新昼夜阶段显示</summary>
+    private void UpdateDayPhaseForState(GameState state)
+    {
+        _currentPhase = state switch
+        {
+            GameState.Explore => DayPhase.Morning,
+            GameState.Build => DayPhase.Dusk,
+            GameState.Battle => DayPhase.Night,
+            GameState.Rest => DayPhase.Dawn,
+            _ => _currentPhase,
+        };
+    }
+
+    // ============================================================
+    // 公共 API
+    // ============================================================
+
+    /// <summary>获取当前阶段剩余时间（秒）</summary>
+    public float GetRemainingTime()
+    {
+        return CurrentPhaseDuration - _phaseTimer;
+    }
+
+    /// <summary>获取当前阶段进度百分比（0~1）</summary>
+    public float GetPhaseProgress()
+    {
+        return PhaseProgress;
+    }
+
+    /// <summary>博士死亡 → 游戏结束</summary>
+    public void GameOver()
+    {
+        SwitchState(GameState.GameOver);
+        GD.Print($"[GameManager] 游戏结束 (原因: {_gameOverReason})");
+
+        // 仅博士死亡时触发 DoctorDied（SaveManager 硬核删档/博士清理）
+        if (_gameOverReason == GameOverReason.DoctorDied)
+        {
+            EventBus.Instance.EmitDoctorDied();
+        }
+
+        // TODO: 触发硬核删除逻辑（由 SaveManager 处理）
+    }
+
+    /// <summary>游戏结束（带原因）</summary>
+    public void GameOverWithReason(GameOverReason reason)
+    {
+        _gameOverReason = reason;
+        GameOver();
+    }
+
+    // ============================================================
+    // 扩展：外部触发（供其他系统调用）
+    // ============================================================
+
+    /// <summary>强制进入战斗阶段（用于夜间提前触发特殊事件）</summary>
+    public void ForceBattle()
+    {
+        if (_currentState == GameState.Build)
+        {
+            // 提前结束建设，进入战斗
+            _phaseTimer = BuildDuration;
+        }
+    }
+
+    /// <summary>跳过当前阶段（开发用）</summary>
+    public void SkipCurrentPhase()
+    {
+        _phaseTimer = CurrentPhaseDuration;
+        GD.Print("[GameManager] 跳过阶段");
+    }
+
+    // ============================================================
+    // 存档集成
+    // ============================================================
+
+    /// <summary>获取当前可存档的游戏状态</summary>
+    public SaveState GetSaveState()
+    {
+        return new SaveState
+        {
+            DayCount = _dayCount,
+            CurrentPhase = (int)_currentPhase,
+            CurrentState = (int)_currentState,
+        };
+    }
+
+    /// <summary>从存档恢复游戏状态</summary>
+    public void RestoreState(SaveState state)
+    {
+        if (state == null) return;
+
+        _dayCount = state.DayCount;
+        _currentPhase = (DayPhase)state.CurrentPhase;
+        _currentState = (GameState)state.CurrentState;
+        _phaseTimer = 0;
+        _totalElapsed = 0;
+
+        // 广播恢复后的状态，让 HUD/面板等刷新
+        EventBus.Instance.EmitGameStateChanged(_currentState);
+        EventBus.Instance.EmitDayNightChanged(_currentPhase, PhaseProgress);
+
+        GD.Print($"[GameManager] 从存档恢复 — Day {_dayCount}, Phase {_currentPhase}, State {_currentState}");
+    }
+
+    // ============================================================
+    // 结算面板集成
+    // ============================================================
+
+    /// <summary>显示结算面板（未实例化时按预制体创建）</summary>
+    public void ShowSettlementPanel()
+    {
+        if (SettlementPanelPrefab == null)
+        {
+            GD.Print("[GameManager] 未设置结算面板预制体");
+            return;
+        }
+
+        if (_settlementPanel == null)
+        {
+            var panel = SettlementPanelPrefab.Instantiate<SettlementPanelController>();
+            GetTree().CurrentScene.AddChild(panel);
+            _settlementPanel = panel;
+        }
+
+        _settlementPanel.Show();
+    }
+
+    /// <summary>隐藏结算面板</summary>
+    public void HideSettlementPanel()
+    {
+        _settlementPanel?.Hide();
+    }
+
+    /// <summary>休整期结束，直接进入新的一天</summary>
+    public void ContinueToNextDay()
+    {
+        if (_currentState == GameState.Rest)
+        {
+            AdvancePhase();
+        }
+    }
+}

@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Gameplay/Inventory/LootItem.cs" id="1_loot"]
+[ext_resource type="Texture2D" path="res://Assets/Art/item_wood.png" id="2_icon"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
+radius = 40.0
+
+[node name="LootItem" type="Node2D"]
+script = ExtResource("1_loot")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_icon")
+scale = Vector2(0.25, 0.25)
+
+[node name="PickupArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupArea"]
+shape = SubResource("CircleShape2D_pickup")
+
+[node name="QuantityLabel" type="Label" parent="."]
+offset_left = -16.0
+offset_top = 24.0
+offset_right = 16.0
+offset_bottom = 44.0
+text = "x1"
+horizontal_alignment = 1
