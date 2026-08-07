@@ -39,6 +39,8 @@ public partial class HUDController : Node
     private Control _settingsPanel;
     private Control _helpPanel;
     private Button _helpCloseButton;
+    private Button _collectionButton;
+    private CollectionPanel _collectionPanel;
 
     // 建设期防御塔选择
     private Control _buildPanel;
@@ -130,6 +132,8 @@ public partial class HUDController : Node
         _settingsPanel = GetNodeOrNull<Control>("../../UICanvas/SettingsPanel");
         _helpPanel = GetNodeOrNull<Control>("../Root/HelpPanel");
         _helpCloseButton = GetNodeOrNull<Button>("../Root/HelpPanel/HelpVBox/HelpCloseButton");
+        _collectionButton = GetNodeOrNull<Button>("../Root/CollectionButton");
+        _collectionPanel = GetNodeOrNull<CollectionPanel>("../Root/CollectionPanel");
         _buildPanel = GetNodeOrNull<Control>("../Root/BuildPanel");
         for (int i = 0; i < 3; i++)
         {
@@ -145,6 +149,7 @@ public partial class HUDController : Node
         if (_inventoryPanel != null) _inventoryPanel.Closed += OnInventoryClosed;
         if (_settingsToggleButton != null) _settingsToggleButton.Pressed += ToggleSettings;
         if (_helpCloseButton != null) _helpCloseButton.Pressed += ToggleHelp;
+        if (_collectionButton != null) _collectionButton.Pressed += ToggleCollection;
         for (int i = 0; i < _towerButtons.Length; i++)
         {
             if (_towerButtons[i] == null) continue;
@@ -177,6 +182,7 @@ public partial class HUDController : Node
         eb.SelectedOperatorChanged += OnSelectedOperatorChanged;
         eb.SkillCast += OnSkillCast;
         eb.SkillCooldownUpdated += OnSkillCooldownUpdated;
+        eb.CollectionAcquired += OnCollectionAcquired;
 
         RefreshAll();
         GD.Print("[HUD] 初始化完成");
@@ -200,11 +206,13 @@ public partial class HUDController : Node
         eb.SelectedOperatorChanged -= OnSelectedOperatorChanged;
         eb.SkillCast -= OnSkillCast;
         eb.SkillCooldownUpdated -= OnSkillCooldownUpdated;
+        eb.CollectionAcquired -= OnCollectionAcquired;
 
         if (_backpackButton != null) _backpackButton.Pressed -= ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed -= OnInventoryClosed;
         if (_settingsToggleButton != null) _settingsToggleButton.Pressed -= ToggleSettings;
         if (_helpCloseButton != null) _helpCloseButton.Pressed -= ToggleHelp;
+        if (_collectionButton != null) _collectionButton.Pressed -= ToggleCollection;
         for (int i = 0; i < _towerButtons.Length; i++)
         {
             if (_towerButtons[i] == null) continue;
@@ -366,7 +374,8 @@ public partial class HUDController : Node
         if (_tooltipHp != null) _tooltipHp.Text = $"生命 {curHp}/{maxHp}";
         if (_tooltipAtk != null) _tooltipAtk.Text = $"攻击 {op.Attack?.AttackDamage ?? 0}";
         if (_tooltipDef != null) _tooltipDef.Text = $"防御 {op.Data?.BaseDefense ?? 0}";
-        if (_tooltipMorale != null) _tooltipMorale.Text = $"心情 {op.Morale}/100";
+        int trust = SaveManager.Instance?.Profile?.TrustData.GetValueOrDefault(op.OperatorDataId, 0) ?? 0;
+        if (_tooltipMorale != null) _tooltipMorale.Text = $"心情 {op.Morale}/100 · 信赖 {trust}";
         if (_tooltipState != null) _tooltipState.Text = $"状态: {GetOperatorStateText(op)}";
 
         var skill = op.Skill?.GetSkill(1);
@@ -602,6 +611,28 @@ public partial class HUDController : Node
         }
     }
 
+    private void ToggleCollection()
+    {
+        if (_collectionPanel == null) return;
+        if (_collectionPanel.Visible)
+        {
+            _collectionPanel.Visible = false;
+        }
+        else
+        {
+            _collectionPanel.Refresh();
+            _collectionPanel.Visible = true;
+        }
+    }
+
+    private void OnCollectionAcquired(int collectionId)
+    {
+        if (_collectionPanel != null && _collectionPanel.Visible)
+        {
+            _collectionPanel.Refresh();
+        }
+    }
+
     private void ToggleHelp()
     {
         if (_helpPanel != null)
@@ -720,6 +751,17 @@ public partial class HUDController : Node
                 return;
             }
 
+            // 藏品图鉴打开时 Esc 关闭
+            if (_collectionPanel != null && _collectionPanel.Visible)
+            {
+                if (keyEvt.Keycode == Key.Escape)
+                {
+                    _collectionPanel.Visible = false;
+                    GetViewport().SetInputAsHandled();
+                }
+                return;
+            }
+
             // 全屏地图打开时 M / Esc 关闭
             if (_worldMap != null && _worldMap.Visible)
             {
@@ -761,9 +803,15 @@ public partial class HUDController : Node
                 GetViewport().SetInputAsHandled();
                 return;
             }
+            if (keyEvt.Keycode == Key.P)
+            {
+                ToggleCollection();
+                GetViewport().SetInputAsHandled();
+                return;
+            }
             if (keyEvt.Keycode == Key.Escape)
             {
-                // 建设模式中先退出建造；否则打开/关闭设置
+                // 建设模式中先退出建造；帮助/图鉴开着先关；否则开关设置
                 if (_towerBuilder != null && _towerBuilder.IsBuildingMode)
                 {
                     _towerBuilder.ExitBuildMode();
@@ -771,6 +819,10 @@ public partial class HUDController : Node
                 else if (_helpPanel != null && _helpPanel.Visible)
                 {
                     _helpPanel.Visible = false;
+                }
+                else if (_collectionPanel != null && _collectionPanel.Visible)
+                {
+                    _collectionPanel.Visible = false;
                 }
                 else
                 {

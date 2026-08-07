@@ -4,8 +4,10 @@ using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Enemy;
+using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.UI.Controllers;
+using System.Collections.Generic;
 
 namespace OutpostProtocol.Managers;
 
@@ -258,6 +260,7 @@ public partial class GameManager : Node
         if (newState == GameState.Rest)
         {
             RepairCoreOnRest();
+            HandleDailyRest();
         }
 
         // 新的一天 → 波次难度提升
@@ -342,6 +345,44 @@ public partial class GameManager : Node
 
         GD.Print($"[GameManager] Day {_dayCount} 物资补给: 木材+{DailyWood} 铁皮+{DailyIron} 食物+{DailyFood} 源石+{DailyOriginium}");
         EventBus.Instance.EmitLogMessage($"每日物资补给已发放", "INFO");
+    }
+
+    /// <summary>休整期：干员心情恢复；全员无战斗不能则信赖 +1</summary>
+    private void HandleDailyRest()
+    {
+        bool anyDown = false;
+        var operators = new List<Operator>();
+
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is not Operator op) continue;
+            operators.Add(op);
+            if (op.State == OperatorState.Down)
+            {
+                anyDown = true;
+            }
+            else
+            {
+                op.AdjustMorale(20);
+            }
+        }
+
+        var profile = SaveManager.Instance?.Profile;
+        if (profile != null && !anyDown && operators.Count > 0)
+        {
+            profile.TrustData ??= new Dictionary<int, int>();
+            foreach (var op in operators)
+            {
+                profile.TrustData[op.OperatorDataId] = profile.TrustData.GetValueOrDefault(op.OperatorDataId, 0) + 1;
+            }
+            SaveManager.Instance.SaveProfile();
+            GD.Print($"[GameManager] 全员安全度过一天，信赖 +1（{operators.Count} 名干员）");
+            EventBus.Instance.EmitLogMessage("全员安全度过一天，信赖提升", "INFO");
+        }
+        else if (anyDown)
+        {
+            GD.Print("[GameManager] 有干员战斗不能，今日不结算信赖");
+        }
     }
 
     /// <summary>根据游戏状态更新昼夜阶段显示</summary>

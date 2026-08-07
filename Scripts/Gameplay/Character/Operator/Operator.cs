@@ -160,6 +160,10 @@ public partial class Operator : BaseEntity
         if (Attack != null)
         {
             Attack.AttackDamage = attack;
+            if (_data.ClassType == "Sniper")
+            {
+                Attack.AttackRange += CollectionManager.SniperRangeBonusPx;
+            }
         }
 
         GD.Print($"[{EntityName}] 应用属性 — HP:{hp}, ATK:{attack}");
@@ -338,7 +342,41 @@ public partial class Operator : BaseEntity
         // 广播战斗不能事件
         EventBus.Instance.EmitOperatorDown(this);
 
-        // TODO: 30 秒倒计时，由外部系统处理急救/撤离
+        // 30 秒倒计时：未急救则自动撤离归队（恢复 20%，心情 -30）
+        GetTree().CreateTimer(30f).Timeout += () =>
+        {
+            if (_state != OperatorState.Down || IsDead) return;
+            EmergencyEvacuate();
+        };
+    }
+
+    /// <summary>博士急救：恢复 20% 生命并脱离战斗不能</summary>
+    public bool EmergencyReviveWithBandage()
+    {
+        if (_state != OperatorState.Down) return false;
+
+        if (Health != null)
+        {
+            Health.CurrentHealth = Math.Max(1, Health.MaxHealth / 5);
+        }
+        _morale = Math.Max(0, _morale - 10);
+        _state = OperatorState.Idle;
+        GD.Print($"[{EntityName}] 博士急救成功，恢复 20% 生命");
+        return true;
+    }
+
+    /// <summary>紧急撤离：自动归队（恢复 20%，心情 -30）</summary>
+    public void EmergencyEvacuate()
+    {
+        if (_state != OperatorState.Down) return;
+
+        if (Health != null)
+        {
+            Health.CurrentHealth = Math.Max(1, Health.MaxHealth / 5);
+        }
+        _morale = Math.Max(0, _morale - 30);
+        _state = OperatorState.Idle;
+        GD.Print($"[{EntityName}] 自动撤离归队，恢复 20% 生命，心情 -30");
     }
 
     private void OnOperatorDown(Node2D op)

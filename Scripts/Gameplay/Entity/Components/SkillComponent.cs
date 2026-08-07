@@ -314,6 +314,10 @@ public partial class SkillComponent : Node
             if (target == null || target.IsDead) continue;
 
             float multiplier = skill.EffectParams.GetValueOrDefault("damageMultiplier", 1.0f);
+            if (_owner is Operator caster && caster.Data?.ClassType == "Caster")
+            {
+                multiplier *= (1f + CollectionManager.CasterSkillDamageBonus);
+            }
             int baseDamage = _owner is Operator op ? (op.Attack?.AttackDamage ?? 20) : 20;
             int damage = (int)(baseDamage * multiplier);
 

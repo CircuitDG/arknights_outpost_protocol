@@ -99,6 +99,10 @@ public partial class Doctor : CharacterBody2D
         _sprite = GetNode<Sprite2D>("Sprite2D");
         Backpack = GetNodeOrNull<Backpack>("Backpack");
 
+        // 藏品：战术电台 —— 指挥半径 +3 格
+        CommandRange += CollectionManager.DoctorCommandRangeBonusPx;
+        AttackCommandRange += CollectionManager.DoctorCommandRangeBonusPx * 0.5f;
+
         // 框选辅助层（屏幕坐标）
         _selectionLayer = new CanvasLayer { Layer = 40 };
         AddChild(_selectionLayer);
@@ -514,6 +518,30 @@ public partial class Doctor : CharacterBody2D
         {
             nearest.ForcePickup(this);
             GD.Print("[Doctor] 按 E 拾取物品");
+            return;
+        }
+
+        // 急救：附近有战斗不能的干员时，消耗急救绷带（物品 ID 4）救治
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is not OutpostProtocol.Gameplay.Character.Operator.Operator op ||
+                op.State != OperatorState.Down)
+            {
+                continue;
+            }
+            if (GlobalPosition.DistanceTo(op.GlobalPosition) > InteractionRange) continue;
+
+            if (Backpack != null && Backpack.GetCount(4) > 0 && Backpack.RemoveItem(4, 1))
+            {
+                op.EmergencyReviveWithBandage();
+                EventBus.Instance.EmitLogMessage($"急救成功: {op.EntityName} 恢复 20% 生命", "INFO");
+            }
+            else
+            {
+                GD.Print("[Doctor] 需要急救绷带才能救治干员");
+                EventBus.Instance.EmitLogMessage("需要急救绷带才能救治干员", "WARN");
+            }
+            return;
         }
     }
 
@@ -538,6 +566,12 @@ public partial class Doctor : CharacterBody2D
             // 干员获得经验
             op.AddExp(enemy.ExpReward);
             GD.Print($"[Doctor] {op.EntityName} 击杀敌人，获得 {enemy.ExpReward} 经验");
+
+            // 藏品掉落：精英敌人（ID 2）35% 概率掉落随机藏品
+            if (enemy.EnemyDataId == 2 && GD.Randf() < 0.35f)
+            {
+                CollectionManager.TryGrantRandom();
+            }
         }
     }
 

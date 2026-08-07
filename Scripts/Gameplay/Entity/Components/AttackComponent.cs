@@ -1,5 +1,7 @@
 using Godot;
+using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Effects;
+using OutpostProtocol.Managers;
 using System;
 using System.Collections.Generic;
 
@@ -161,6 +163,7 @@ public partial class AttackComponent : Node
             if (collider is not BaseEntity entity || entity == _owner) continue;
             if (entity.Faction != TargetFaction) continue;
             if (entity.IsDead) continue;
+            if (entity is Operator downOp && downOp.State == OperatorState.Down) continue;
 
             float dist = _owner.GlobalPosition.DistanceTo(entity.GlobalPosition);
             if (dist < minDist && dist <= AttackRange)
@@ -180,8 +183,25 @@ public partial class AttackComponent : Node
 
         // 计算伤害（可扩展为携带者属性加成）
         int damage = AttackDamage;
+        bool isGuard = false;
+        if (_owner is Operator op && op.Data != null)
+        {
+            string cls = op.Data.ClassType;
+            if (cls == "Guard" || cls == "Vanguard")
+            {
+                damage = (int)(damage * (1f + CollectionManager.GuardVanguardAttackBonus));
+                isGuard = cls == "Guard";
+            }
+        }
 
         target.TakeDamage(damage, _owner);
+
+        // 藏品：真银斩剑谱 —— 近卫 15% 概率范围伤害
+        if (isGuard && CollectionManager.GuardSilverSlashChance > 0f &&
+            GD.Randf() < CollectionManager.GuardSilverSlashChance)
+        {
+            TriggerSilverSlash(target, damage);
+        }
 
         // 攻击表现：弹道 + 脉冲（干员/敌人通用）
         if (_owner is Node2D ownerNode && target is Node2D targetNode)
@@ -194,6 +214,27 @@ public partial class AttackComponent : Node
         GD.Print($"[AttackComponent] {_owner.EntityName} 攻击 {target.EntityName}，伤害 {damage}");
     }
 
+    /// <summary>真银斩：对目标周围 48px 内所有敌人造成 80% 伤害</summary>
+    private void TriggerSilverSlash(BaseEntity target, int damage)
+    {
+        var space = _owner.GetWorld2D().DirectSpaceState;
+        var query = new PhysicsShapeQueryParameters2D();
+        query.Shape = new CircleShape2D { Radius = 48f };
+        query.Transform = new Transform2D(0, target.GlobalPosition);
+        query.CollisionMask = TargetCollisionMask;
+
+        int splashDamage = (int)(damage * 0.8f);
+        foreach (var result in space.IntersectShape(query))
+        {
+            var collider = result["collider"].As<GodotObject>();
+            if (collider is not BaseEntity entity || entity == target || entity.IsDead) continue;
+            if (entity.Faction != TargetFaction) continue;
+            entity.TakeDamage(splashDamage, _owner);
+        }
+        AttackEffects.SpawnTracer(_owner, target, new Color(0.9f, 0.35f, 0.35f));
+        GD.Print($"[AttackComponent] {_owner.EntityName} 触发真银斩！");
+    }
+
     // ============================================================
     // 辅助方法
     // ============================================================
@@ -203,6 +244,7 @@ public partial class AttackComponent : Node
         if (target == null) return false;
         if (target == _owner) return false;
         if (target.IsDead) return false;
+        if (target is Operator downOp && downOp.State == OperatorState.Down) return false;
         if (target.Faction != TargetFaction) return false;
         return true;
     }

@@ -29,6 +29,7 @@
 | `Icons/skill_melantha_attack.png` | 玫兰莎 技能：攻击力强化·γ型 | `技能 攻击力强化·γ型.png` |
 | `Icons/skill_ansel_heal.png` | 安塞尔 技能：治疗范围强化 | `技能 治疗范围强化.png` |
 | `UI/range_ring.png` | 塔射程指示环（程序生成的白色圆环，非 PRTS 素材） | - |
+| `Icons/collection_*.png` | 藏品图鉴占位图标（程序绘制，非 PRTS 素材） | - |
 
 ## 版权说明
 
