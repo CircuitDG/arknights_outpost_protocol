@@ -25,6 +25,7 @@ public partial class TalentTreeController : Control
     private SaveProfile _profile;
     private readonly Dictionary<string, TalentCard> _talentCards = new();
     private bool _treeBuilt;
+    private bool _dataReady;
 
     public override void _Ready()
     {
@@ -54,8 +55,12 @@ public partial class TalentTreeController : Control
             _closeButton.Pressed += OnClosePressed;
         }
 
-        BuildTalentTree();
-        _treeBuilt = true;
+        if (DataManager.Instance != null && DataManager.Instance.IsLoaded)
+        {
+            BuildTalentTree();
+            _treeBuilt = true;
+            _dataReady = true;
+        }
         ApplyAllTalents();
         GD.Print("[TalentTree] 初始化完成");
     }
@@ -71,8 +76,9 @@ public partial class TalentTreeController : Control
     public override void _Process(double delta)
     {
         // DataManager 异步加载完成后补建天赋树
-        if (!_treeBuilt && DataManager.Instance.IsLoaded && _talentCardPrefab != null)
+        if (!_dataReady && DataManager.Instance != null && DataManager.Instance.IsLoaded && _talentCardPrefab != null)
         {
+            _dataReady = true;
             _treeBuilt = true;
             BuildTalentTree();
             ApplyAllTalents();
@@ -130,15 +136,32 @@ public partial class TalentTreeController : Control
                 Modulate = branchColors.GetValueOrDefault(branch, Colors.White),
             });
 
-            foreach (var talent in talentList.OrderBy(t => t.Name))
+            var cards = new List<TalentCard>();
+            var cardById = new Dictionary<string, TalentCard>();
+
+            foreach (var talent in talentList.OrderBy(t => t.Tier).ThenBy(t => t.Name))
             {
                 var card = _talentCardPrefab.Instantiate<TalentCard>();
                 if (card == null) continue;
 
                 card.Setup(talent, _profile, this);
-                _branchContainer.AddChild(card);
+                cards.Add(card);
+                cardById[talent.Id] = card;
                 _talentCards[talent.Id] = card;
             }
+
+            var edges = new List<(string ParentId, string ChildId)>();
+            foreach (var talent in talentList)
+            {
+                foreach (var prereq in talent.Prerequisites)
+                {
+                    edges.Add((prereq, talent.Id));
+                }
+            }
+
+            var graph = new TalentTreeGraph();
+            graph.Setup(cards, edges);
+            _branchContainer.AddChild(graph);
 
             _branchContainer.AddChild(new HSeparator());
         }
@@ -170,6 +193,13 @@ public partial class TalentTreeController : Control
         int currentLevel = _profile.TalentLevels.GetValueOrDefault(talentId, 0);
         if (currentLevel >= talent.MaxLevel) return false;
 
+        if (!ArePrerequisitesMet(talent))
+        {
+            GD.Print($"[TalentTree] 前置天赋未解锁，无法升级: {talent.Name}");
+            EventBus.Instance.EmitLogMessage($"需要先解锁前置天赋", "WARN");
+            return false;
+        }
+
         int cost = talent.CostPerLevel;
         if (_profile.TotalTalentPoints < cost) return false;
 
@@ -182,6 +212,22 @@ public partial class TalentTreeController : Control
 
         EventBus.Instance.EmitLogMessage($"天赋升级: {talent.Name} Lv.{currentLevel + 1}", "INFO");
         GD.Print($"[TalentTree] 升级天赋: {talent.Name} → Lv.{currentLevel + 1} (消耗 {cost} 点)");
+        return true;
+    }
+
+    /// <summary>检查天赋前置是否全部满足（至少 1 级）</summary>
+    public bool ArePrerequisitesMet(TalentData talent)
+    {
+        if (talent == null || talent.Prerequisites == null || talent.Prerequisites.Count == 0) return true;
+        if (_profile?.TalentLevels == null) return false;
+
+        foreach (var prereqId in talent.Prerequisites)
+        {
+            if (_profile.TalentLevels.GetValueOrDefault(prereqId, 0) <= 0)
+            {
+                return false;
+            }
+        }
         return true;
     }
 

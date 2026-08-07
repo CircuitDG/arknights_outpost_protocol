@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/Controllers/HUDController.cs" id="1_hud"]
 [ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="2_theme"]
 [ext_resource type="Texture2D" path="res://Assets/UI/cooldown_fill.png" id="3_cooldown"]
 [ext_resource type="Texture2D" path="res://Assets/Art/menu_bg.png" id="4_bg"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/InventoryPanel.cs" id="5_inventory"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp"]
 bg_color = Color(0.42, 0.58, 0.32, 0.95)
@@ -53,6 +54,42 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hotbar"]
+bg_color = Color(0.12, 0.1, 0.08, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.3, 0.19, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hotbar_selected"]
+bg_color = Color(0.22, 0.18, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.78, 0.35, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
+bg_color = Color(0.1, 0.08, 0.06, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.56, 0.32, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
 [node name="HUD" type="CanvasLayer"]
 
 [node name="Root" type="Control" parent="."]
@@ -63,28 +100,29 @@ theme = ExtResource("2_theme")
 [node name="TopLeftPanel" type="Panel" parent="Root"]
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 262.0
-offset_bottom = 200.0
+offset_right = 244.0
+offset_bottom = 172.0
 mouse_filter = 2
 
 [node name="TopLeftVBox" type="VBoxContainer" parent="Root"]
-offset_left = 24.0
-offset_top = 20.0
-offset_right = 252.0
-offset_bottom = 192.0
-theme_override_constants/separation = 5
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 236.0
+offset_bottom = 166.0
+theme_override_constants/separation = 3
 
 [node name="StatusTitle" type="Label" parent="Root/TopLeftVBox"]
 text = "◆ 生存状态"
 theme_type_variation = &"PZPanelTitle"
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 15
 
 [node name="HPLabel" type="Label" parent="Root/TopLeftVBox"]
 text = "生命 100/100"
 theme_override_colors/font_color = Color(0.82, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="HPBar" type="ProgressBar" parent="Root/TopLeftVBox"]
-custom_minimum_size = Vector2(180, 14)
+custom_minimum_size = Vector2(170, 9)
 max_value = 100.0
 value = 100.0
 show_percentage = false
@@ -93,9 +131,10 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_hp")
 [node name="StaminaLabel" type="Label" parent="Root/TopLeftVBox"]
 text = "体力 100/100"
 theme_override_colors/font_color = Color(0.96, 0.8, 0.55, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="StaminaBar" type="ProgressBar" parent="Root/TopLeftVBox"]
-custom_minimum_size = Vector2(180, 14)
+custom_minimum_size = Vector2(170, 9)
 max_value = 100.0
 value = 100.0
 show_percentage = false
@@ -104,12 +143,14 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_stamina")
 [node name="ResourceLabel" type="Label" parent="Root/TopLeftVBox"]
 text = "木材 ×0  铁皮 ×0  源石 ×0"
 theme_override_colors/font_color = Color(0.9, 0.84, 0.66, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="CoreHealthLabel" type="Label" parent="Root/TopLeftVBox"]
 text = "核心: 100/100"
+theme_override_font_sizes/font_size = 12
 
 [node name="CoreHealthBar" type="ProgressBar" parent="Root/TopLeftVBox"]
-custom_minimum_size = Vector2(180, 14)
+custom_minimum_size = Vector2(170, 9)
 max_value = 100.0
 value = 100.0
 show_percentage = false
@@ -118,297 +159,146 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_core")
 [node name="CoreStatusLabel" type="Label" parent="Root/TopLeftVBox"]
 text = "◆ 运转中"
 theme_override_colors/font_color = Color(0.62, 0.82, 0.5, 1)
+theme_override_font_sizes/font_size = 12
 
-[node name="TopRightPanel" type="Panel" parent="Root"]
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -262.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 126.0
+[node name="CenterTopPanel" type="Panel" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 8.0
+offset_right = 300.0
+offset_bottom = 52.0
 mouse_filter = 2
 
-[node name="TopRightVBox" type="VBoxContainer" parent="Root"]
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -248.0
-offset_top = 20.0
-offset_right = -24.0
-offset_bottom = 118.0
-theme_override_constants/separation = 4
+[node name="CenterTopHBox" type="HBoxContainer" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -290.0
+offset_top = 14.0
+offset_right = 290.0
+offset_bottom = 46.0
+theme_override_constants/separation = 18
+alignment = 1
 
-[node name="InfoTitle" type="Label" parent="Root/TopRightVBox"]
-text = "◆ 前线情报"
-theme_type_variation = &"PZPanelTitle"
-theme_override_font_sizes/font_size = 19
-horizontal_alignment = 2
-
-[node name="DayLabel" type="Label" parent="Root/TopRightVBox"]
+[node name="DayLabel" type="Label" parent="Root/CenterTopHBox"]
 text = "Day 1"
 theme_override_colors/font_color = Color(0.94, 0.88, 0.7, 1)
-theme_override_font_sizes/font_size = 20
-horizontal_alignment = 2
+theme_override_font_sizes/font_size = 15
 
-[node name="PhaseLabel" type="Label" parent="Root/TopRightVBox"]
+[node name="PhaseLabel" type="Label" parent="Root/CenterTopHBox"]
 text = "探索期"
-horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.86, 0.82, 0.7, 1)
+theme_override_font_sizes/font_size = 14
 
-[node name="PhaseBar" type="ProgressBar" parent="Root/TopRightVBox"]
-custom_minimum_size = Vector2(180, 12)
+[node name="WaveLabel" type="Label" parent="Root/CenterTopHBox"]
+text = "波次: --"
+theme_override_colors/font_color = Color(0.9, 0.78, 0.52, 1)
+theme_override_font_sizes/font_size = 14
+
+[node name="PhaseBar" type="ProgressBar" parent="Root/CenterTopHBox"]
+custom_minimum_size = Vector2(130, 9)
 max_value = 100.0
 show_percentage = false
 theme_override_styles/fill = SubResource("StyleBoxFlat_phase")
 
-[node name="BottomCenterPanel" type="Panel" parent="Root"]
+[node name="HotbarContainer" type="HBoxContainer" parent="Root"]
 anchor_left = 0.5
 anchor_right = 0.5
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -380.0
-offset_top = -64.0
-offset_right = 380.0
-offset_bottom = -8.0
-mouse_filter = 2
-
-[node name="BottomCenterHBox" type="HBoxContainer" parent="Root"]
-anchor_left = 0.5
-anchor_right = 0.5
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -370.0
-offset_top = -56.0
-offset_right = 370.0
-offset_bottom = -16.0
-
-[node name="OperatorLabel" type="Label" parent="Root/BottomCenterHBox"]
-text = "干员: --"
-theme_override_colors/font_color = Color(0.84, 0.78, 0.63, 1)
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-vertical_alignment = 1
-size_flags_horizontal = 3
-
-[node name="BottomRightPanel" type="Panel" parent="Root"]
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -272.0
-offset_top = -138.0
-offset_right = -10.0
-offset_bottom = -10.0
-mouse_filter = 2
-
-[node name="BottomRightVBox" type="VBoxContainer" parent="Root"]
-anchor_left = 1.0
-anchor_right = 1.0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = -258.0
-offset_top = -128.0
-offset_right = -24.0
-offset_bottom = -20.0
-theme_override_constants/separation = 4
-
-[node name="SkillLabel" type="Label" parent="Root/BottomRightVBox"]
-text = "技能栏（Tab 切换干员）"
-theme_override_colors/font_color = Color(0.86, 0.8, 0.64, 1)
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 2
-
-[node name="SkillBar" type="HBoxContainer" parent="Root/BottomRightVBox"]
-custom_minimum_size = Vector2(220, 70)
-theme_override_constants/separation = 8
-
-[node name="SkillSlot_1" type="Control" parent="Root/BottomRightVBox/SkillBar"]
-custom_minimum_size = Vector2(52, 64)
-
-[node name="SlotPanel" type="Panel" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-
-[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-mouse_filter = 2
-
-[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-texture_progress = ExtResource("3_cooldown")
-max_value = 100.0
-mouse_filter = 2
-
-[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
-offset_left = 2.0
-offset_top = 46.0
-offset_right = 26.0
-offset_bottom = 62.0
-text = "F1"
-theme_override_colors/font_color = Color(0.68, 0.6, 0.44, 1)
-theme_override_font_sizes/font_size = 12
-
-[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_1"]
-offset_left = 26.0
-offset_top = 46.0
-offset_right = 52.0
-offset_bottom = 62.0
-text = "✓"
-theme_override_colors/font_color = Color(0.6, 0.82, 0.5, 1)
-horizontal_alignment = 2
-
-[node name="SkillSlot_2" type="Control" parent="Root/BottomRightVBox/SkillBar"]
-custom_minimum_size = Vector2(52, 64)
-
-[node name="SlotPanel" type="Panel" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-
-[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-mouse_filter = 2
-
-[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-texture_progress = ExtResource("3_cooldown")
-max_value = 100.0
-mouse_filter = 2
-
-[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
-offset_left = 2.0
-offset_top = 46.0
-offset_right = 26.0
-offset_bottom = 62.0
-text = "F2"
-theme_override_colors/font_color = Color(0.68, 0.6, 0.44, 1)
-theme_override_font_sizes/font_size = 12
-
-[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_2"]
-offset_left = 26.0
-offset_top = 46.0
-offset_right = 52.0
-offset_bottom = 62.0
-text = "-"
-theme_override_colors/font_color = Color(0.9, 0.72, 0.4, 1)
-horizontal_alignment = 2
-
-[node name="SkillSlot_3" type="Control" parent="Root/BottomRightVBox/SkillBar"]
-custom_minimum_size = Vector2(52, 64)
-
-[node name="SlotPanel" type="Panel" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-
-[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-mouse_filter = 2
-
-[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-texture_progress = ExtResource("3_cooldown")
-max_value = 100.0
-mouse_filter = 2
-
-[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
-offset_left = 2.0
-offset_top = 46.0
-offset_right = 26.0
-offset_bottom = 62.0
-text = "F3"
-theme_override_colors/font_color = Color(0.68, 0.6, 0.44, 1)
-theme_override_font_sizes/font_size = 12
-
-[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_3"]
-offset_left = 26.0
-offset_top = 46.0
-offset_right = 52.0
-offset_bottom = 62.0
-text = "-"
-theme_override_colors/font_color = Color(0.9, 0.72, 0.4, 1)
-horizontal_alignment = 2
-
-[node name="SkillSlot_4" type="Control" parent="Root/BottomRightVBox/SkillBar"]
-custom_minimum_size = Vector2(52, 64)
-
-[node name="SlotPanel" type="Panel" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-
-[node name="SkillIcon" type="TextureRect" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-mouse_filter = 2
-
-[node name="SkillCooldown" type="TextureProgressBar" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
-offset_left = 3.0
-offset_top = 3.0
-offset_right = 49.0
-offset_bottom = 49.0
-texture_progress = ExtResource("3_cooldown")
-max_value = 100.0
-mouse_filter = 2
-
-[node name="SkillKey" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
-offset_left = 2.0
-offset_top = 46.0
-offset_right = 26.0
-offset_bottom = 62.0
-text = "F4"
-theme_override_colors/font_color = Color(0.68, 0.6, 0.44, 1)
-theme_override_font_sizes/font_size = 12
-
-[node name="SkillStatus" type="Label" parent="Root/BottomRightVBox/SkillBar/SkillSlot_4"]
-offset_left = 26.0
-offset_top = 46.0
-offset_right = 52.0
-offset_bottom = 62.0
-text = "-"
-theme_override_colors/font_color = Color(0.9, 0.72, 0.4, 1)
-horizontal_alignment = 2
-
-[node name="BottomLeftPanel" type="Panel" parent="Root"]
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = -66.0
-offset_right = 268.0
+offset_top = -54.0
+offset_right = 258.0
 offset_bottom = -10.0
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="BackpackButton" type="Button" parent="Root/HotbarContainer"]
+custom_minimum_size = Vector2(52, 38)
+text = "🎒"
+
+[node name="OperatorColumnPanel" type="Panel" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -228.0
+offset_top = 126.0
+offset_right = -10.0
+offset_bottom = 660.0
 mouse_filter = 2
 
-[node name="BottomLeftVBox" type="VBoxContainer" parent="Root"]
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -56.0
-offset_right = 256.0
-offset_bottom = -20.0
-theme_override_constants/separation = 4
+[node name="OperatorCardsScroll" type="ScrollContainer" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 134.0
+offset_right = -18.0
+offset_bottom = 652.0
+horizontal_scroll_mode = 0
 
-[node name="WaveLabel" type="Label" parent="Root/BottomLeftVBox"]
-text = "波次: --"
-theme_override_colors/font_color = Color(0.9, 0.78, 0.52, 1)
+[node name="OperatorCardContainer" type="VBoxContainer" parent="Root/OperatorCardsScroll"]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="TooltipPanel" type="Panel" parent="Root"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 330.0
+offset_bottom = 238.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_tooltip")
+mouse_filter = 2
+visible = false
+
+[node name="TooltipTitle" type="Label" parent="Root/TooltipPanel"]
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(0.98, 0.88, 0.62, 1)
+theme_override_font_sizes/font_size = 17
+text = ""
+
+[node name="TooltipSeparator" type="HSeparator" parent="Root/TooltipPanel"]
+offset_left = 12.0
+offset_top = 42.0
+offset_right = -12.0
+offset_bottom = 46.0
+
+[node name="TooltipLabel" type="Label" parent="Root/TooltipPanel"]
+offset_left = 14.0
+offset_top = 52.0
+offset_right = -14.0
+offset_bottom = -10.0
+theme_override_colors/font_color = Color(0.92, 0.86, 0.7, 1)
+theme_override_font_sizes/font_size = 13
+text = ""
+vertical_alignment = 0
+autowrap_mode = 2
+
+[node name="InventoryPanel" type="Control" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("5_inventory")
+visible = false
+
+[node name="HelpToggleButton" type="Button" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -170.0
+offset_top = 66.0
+offset_right = -10.0
+offset_bottom = 96.0
+text = "❓ 指引"
+
+[node name="SettingsToggleButton" type="Button" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -170.0
+offset_top = 100.0
+offset_right = -10.0
+offset_bottom = 130.0
+text = "⚙ 设置"
 
 [node name="PhaseNoticePanel" type="Panel" parent="Root"]
 anchor_left = 0.5
@@ -430,24 +320,6 @@ theme_override_font_sizes/font_size = 22
 text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="HelpToggleButton" type="Button" parent="Root"]
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -196.0
-offset_top = 134.0
-offset_right = -12.0
-offset_bottom = 170.0
-text = "❓ 操作指引"
-
-[node name="SettingsToggleButton" type="Button" parent="Root"]
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -196.0
-offset_top = 176.0
-offset_right = -12.0
-offset_bottom = 212.0
-text = "⚙ 设置"
 
 [node name="HelpPanel" type="Panel" parent="Root"]
 anchor_left = 0.5
@@ -487,6 +359,8 @@ horizontal_alignment = 1
 [node name="HelpText" type="Label" parent="Root/HelpPanel/HelpVBox"]
 text = "WASD 移动 | Shift 冲刺 | E 采集/拾取
 右键 指挥干员 | Tab 切换干员 | F1-F4 释放技能
+点击右侧干员卡牌选择干员，悬停查看详细信息
+数字键 1-9 选择物品栏 | 滚轮切换 | B 打开背包
 数字键 1/2/3 选择防御塔 | T 天赋树 | H 帮助 | O 设置
 
 活下去，守住前哨站。"

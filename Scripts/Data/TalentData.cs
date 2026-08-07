@@ -53,6 +53,12 @@ public class TalentData
     [JsonPropertyName("costPerLevel")]
     public int CostPerLevel { get; set; } = 1;
 
+    [JsonPropertyName("tier")]
+    public int Tier { get; set; }
+
+    [JsonPropertyName("prerequisites")]
+    public List<string> Prerequisites { get; set; } = new();
+
     [JsonPropertyName("effectType")]
     public string EffectType { get; set; } = string.Empty;
 

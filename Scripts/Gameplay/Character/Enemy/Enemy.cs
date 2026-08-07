@@ -69,6 +69,8 @@ public partial class Enemy : BaseEntity
         EventBus.Instance.EntityDied += OnEntityDied;
         EventBus.Instance.GameStateChanged += OnGameStateChanged;
 
+        UpdateSprite();
+
         GD.Print($"[{EntityName}] 敌人初始化完成 — HP:{Health?.CurrentHealth}/{Health?.MaxHealth}");
     }
 
@@ -97,6 +99,26 @@ public partial class Enemy : BaseEntity
         else if (_hasTargetPosition)
         {
             HandleMoveBehavior();
+        }
+    }
+
+    /// <summary>按敌人数据切换头像</summary>
+    private void UpdateSprite()
+    {
+        var sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+        if (sprite == null) return;
+
+        string path = EnemyDataId switch
+        {
+            2 => "res://Assets/Art/Enemies/enemy_soldier.png",
+            _ => "res://Assets/Art/Enemies/enemy_slug.png",
+        };
+
+        var tex = GD.Load<Texture2D>(path);
+        if (tex != null)
+        {
+            sprite.Texture = tex;
+            sprite.Scale = new Vector2(0.3f, 0.3f);
         }
     }
 

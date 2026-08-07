@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://Scripts/Gameplay/Entity/Components/SkillComponent.cs" id="5_skill"]
 [ext_resource type="Script" path="res://Scripts/Gameplay/Character/Enemy/EnemyAI.cs" id="6_ai"]
 [ext_resource type="PackedScene" path="res://Scenes/Inventory/LootItem.tscn" id="7_loot"]
+[ext_resource type="Texture2D" path="res://Assets/Art/Enemies/enemy_slug.png" id="8_tex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 radius = 10.0
@@ -24,9 +25,9 @@ AttackRangeOffset = 5.0
 ExpReward = 10
 ResourceReward = 5
 
-[node name="Sprite2D" type="Polygon2D" parent="."]
-color = Color(0.9, 0.25, 0.25, 1)
-polygon = PackedVector2Array(-10, -10, 10, -10, 10, 10, -10, 10)
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("8_tex")
+scale = Vector2(0.3, 0.3)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_enemy")

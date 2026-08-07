@@ -13,6 +13,22 @@
 | `Art/item_bandage.png` | 急救绷带图标 | `头像 装置 急救包.png` |
 | `Art/tilemap.png` | 地图瓦片（草地/街道/地板取自 `场景 林野/地城/商业`，墙体取自 `墙 世路快讯 1`） | PRTS 场景与基建素材 |
 | `Art/icon.png` | 游戏图标 | `道具 带框 至纯源石.png` |
+| `Art/Characters/doctor.png` | 博士（Npc） | `Npc_doctor.png` |
+| `Art/Characters/doctor_token.png` | 博士游戏内头像（裁剪处理） | `Npc_doctor.png` |
+| `Art/Characters/op_fang.png` | 芬 干员头像 | `头像 芬.png` |
+| `Art/Characters/op_melantha.png` | 玫兰莎 干员头像 | `头像 玫兰莎.png` |
+| `Art/Characters/op_ansel.png` | 安赛尔（安塞尔）干员头像 | `头像 安赛尔.png` |
+| `Art/Enemies/enemy_slug.png` | 源石虫敌人头像 | `头像 敌人 源石虫.png` |
+| `Art/Enemies/enemy_soldier.png` | 士兵敌人头像 | `头像 敌人 士兵.png` |
+| `Art/Towers/tower_ballista.png` | 弩炮塔图标 | `Trap gunctrl 1` |
+| `Art/Towers/tower_explosion.png` | 源石爆破塔图标 | `Trap enable ore 1` |
+| `Art/Towers/tower_gel.png` | 凝胶塔图标（另存 72px 缩略版 `tower_gel_72.png`） | `道具 带框 凝胶.png` |
+| `Art/Buildings/core_logo.png` | 前哨站核心（罗德岛 Logo，另存 96px 缩略版） | `Logo 罗德岛.png` |
+| `Art/Buildings/core_beacon.png` | 前哨站核心备选（信标） | `头像 敌人 信标.png` |
+| `Icons/skill_fen_charge.png` | 芬 技能：冲锋号令·α型 | `技能 冲锋号令·α型.png` |
+| `Icons/skill_melantha_attack.png` | 玫兰莎 技能：攻击力强化·γ型 | `技能 攻击力强化·γ型.png` |
+| `Icons/skill_ansel_heal.png` | 安塞尔 技能：治疗范围强化 | `技能 治疗范围强化.png` |
+| `UI/range_ring.png` | 塔射程指示环（程序生成的白色圆环，非 PRTS 素材） | - |
 
 ## 版权说明
 

@@ -131,6 +131,7 @@ public partial class Operator : BaseEntity
         EntityName = _data.Name;
         EntityId = _data.Id;
 
+        UpdateSprite();
         ApplyStats();
         // 天赋：攻速加成（场景默认 1.0 为基础）
         if (Attack != null)
@@ -162,6 +163,33 @@ public partial class Operator : BaseEntity
         }
 
         GD.Print($"[{EntityName}] 应用属性 — HP:{hp}, ATK:{attack}");
+    }
+
+    /// <summary>按干员数据切换头像</summary>
+    private void UpdateSprite()
+    {
+        var sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+        if (sprite == null) return;
+
+        string path = GetAvatarPath(OperatorDataId);
+
+        var tex = GD.Load<Texture2D>(path);
+        if (tex != null)
+        {
+            sprite.Texture = tex;
+            sprite.Scale = new Vector2(0.28f, 0.28f);
+        }
+    }
+
+    /// <summary>按干员数据 ID 获取头像素材路径（供地图/卡牌/HUD 共用）</summary>
+    public static string GetAvatarPath(int operatorDataId)
+    {
+        return operatorDataId switch
+        {
+            1002 => "res://Assets/Art/Characters/op_melantha.png",
+            1003 => "res://Assets/Art/Characters/op_ansel.png",
+            _ => "res://Assets/Art/Characters/op_fang.png",
+        };
     }
 
     // ============================================================

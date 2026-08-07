@@ -7,6 +7,8 @@
     "iconPath": "res://Assets/Icons/talent_backpack.png",
     "maxLevel": 3,
     "costPerLevel": 1,
+    "tier": 0,
+    "prerequisites": [],
     "effectType": "BackpackCapacity",
     "effectValues": [5, 10, 15],
     "descriptions": ["背包容量 +5", "背包容量 +10", "背包容量 +15"]
@@ -19,6 +21,8 @@
     "iconPath": "res://Assets/Icons/talent_health.png",
     "maxLevel": 3,
     "costPerLevel": 1,
+    "tier": 0,
+    "prerequisites": [],
     "effectType": "DoctorHealth",
     "effectValues": [20, 40, 60],
     "descriptions": ["生命上限 +20", "生命上限 +40", "生命上限 +60"]
@@ -31,6 +35,8 @@
     "iconPath": "res://Assets/Icons/talent_stamina.png",
     "maxLevel": 3,
     "costPerLevel": 1,
+    "tier": 1,
+    "prerequisites": ["doctor_health"],
     "effectType": "DoctorStaminaRegen",
     "effectValues": [0.1, 0.2, 0.3],
     "descriptions": ["体力恢复 +10%", "体力恢复 +20%", "体力恢复 +30%"]
@@ -43,6 +49,8 @@
     "iconPath": "res://Assets/Icons/talent_speed.png",
     "maxLevel": 3,
     "costPerLevel": 2,
+    "tier": 0,
+    "prerequisites": [],
     "effectType": "OperatorAttackSpeed",
     "effectValues": [0.05, 0.10, 0.15],
     "descriptions": ["攻速 +5%", "攻速 +10%", "攻速 +15%"]
@@ -55,6 +63,8 @@
     "iconPath": "res://Assets/Icons/talent_exp.png",
     "maxLevel": 3,
     "costPerLevel": 2,
+    "tier": 1,
+    "prerequisites": ["operator_attackspeed"],
     "effectType": "OperatorExpGain",
     "effectValues": [0.1, 0.2, 0.3],
     "descriptions": ["经验 +10%", "经验 +20%", "经验 +30%"]
@@ -67,6 +77,8 @@
     "iconPath": "res://Assets/Icons/talent_start.png",
     "maxLevel": 2,
     "costPerLevel": 2,
+    "tier": 2,
+    "prerequisites": ["operator_exp"],
     "effectType": "OperatorStartLevel",
     "effectValues": [1, 2],
     "descriptions": ["初始等级 +1", "初始等级 +2"]
@@ -79,6 +91,8 @@
     "iconPath": "res://Assets/Icons/talent_build.png",
     "maxLevel": 3,
     "costPerLevel": 2,
+    "tier": 0,
+    "prerequisites": [],
     "effectType": "TowerBuildCost",
     "effectValues": [0.1, 0.2, 0.3],
     "descriptions": ["消耗 -10%", "消耗 -20%", "消耗 -30%"]
@@ -91,6 +105,8 @@
     "iconPath": "res://Assets/Icons/talent_upgrade.png",
     "maxLevel": 3,
     "costPerLevel": 2,
+    "tier": 1,
+    "prerequisites": ["tower_build_cost"],
     "effectType": "TowerUpgradeCost",
     "effectValues": [0.1, 0.2, 0.3],
     "descriptions": ["消耗 -10%", "消耗 -20%", "消耗 -30%"]
@@ -103,6 +119,8 @@
     "iconPath": "res://Assets/Icons/talent_core.png",
     "maxLevel": 3,
     "costPerLevel": 1,
+    "tier": 1,
+    "prerequisites": ["tower_build_cost"],
     "effectType": "CoreRepairEfficiency",
     "effectValues": [0.2, 0.4, 0.6],
     "descriptions": ["修复 +20%", "修复 +40%", "修复 +60%"]
@@ -115,6 +133,8 @@
     "iconPath": "res://Assets/Icons/talent_gather.png",
     "maxLevel": 3,
     "costPerLevel": 1,
+    "tier": 0,
+    "prerequisites": [],
     "effectType": "GatherAmount",
     "effectValues": [1, 2, 3],
     "descriptions": ["采集量 +1", "采集量 +2", "采集量 +3"]
@@ -127,6 +147,8 @@
     "iconPath": "res://Assets/Icons/talent_loot.png",
     "maxLevel": 3,
     "costPerLevel": 1,
+    "tier": 1,
+    "prerequisites": ["gather_amount"],
     "effectType": "LootDropRate",
     "effectValues": [0.2, 0.4, 0.6],
     "descriptions": ["掉落 +20%", "掉落 +40%", "掉落 +60%"]
@@ -139,6 +161,8 @@
     "iconPath": "res://Assets/Icons/talent_speed.png",
     "maxLevel": 2,
     "costPerLevel": 1,
+    "tier": 2,
+    "prerequisites": ["loot_drop"],
     "effectType": "DoctorSpeed",
     "effectValues": [0.15, 0.30],
     "descriptions": ["移速 +15%", "移速 +30%"]

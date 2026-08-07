@@ -22,6 +22,8 @@ public partial class TalentCard : Control
     private SaveProfile _profile;
     private TalentTreeController _controller;
 
+    public TalentData Talent => _talent;
+
     public override void _Ready()
     {
         _nameLabel = GetNodeOrNull<Label>("CardPanel/MainRow/InfoColumn/NameLabel");
@@ -63,8 +65,12 @@ public partial class TalentCard : Control
         bool isMaxLevel = currentLevel >= _talent.MaxLevel;
         int cost = _talent.CostPerLevel;
         bool canAfford = _profile.TotalTalentPoints >= cost;
+        bool locked = _controller != null && !_controller.ArePrerequisitesMet(_talent);
 
-        if (_nameLabel != null) _nameLabel.Text = _talent.Name;
+        if (_nameLabel != null)
+        {
+            _nameLabel.Text = locked ? $"🔒 {_talent.Name}" : _talent.Name;
+        }
 
         if (_descriptionLabel != null)
         {
@@ -77,7 +83,7 @@ public partial class TalentCard : Control
 
         if (_costLabel != null)
         {
-            _costLabel.Text = isMaxLevel ? "已满级" : $"消耗: {cost} 点";
+            _costLabel.Text = locked ? "需解锁前置" : isMaxLevel ? "已满级" : $"消耗: {cost} 点";
         }
 
         if (_progressBar != null)
@@ -88,9 +94,9 @@ public partial class TalentCard : Control
 
         if (_upgradeButton != null)
         {
-            _upgradeButton.Disabled = isMaxLevel || !canAfford;
-            _upgradeButton.Text = isMaxLevel ? "已满级" : "升级";
-            _upgradeButton.Modulate = canAfford && !isMaxLevel ? Colors.White : Colors.Gray;
+            _upgradeButton.Disabled = locked || isMaxLevel || !canAfford;
+            _upgradeButton.Text = locked ? "🔒 前置" : isMaxLevel ? "已满级" : "升级";
+            _upgradeButton.Modulate = !locked && canAfford && !isMaxLevel ? Colors.White : Colors.Gray;
         }
     }
 

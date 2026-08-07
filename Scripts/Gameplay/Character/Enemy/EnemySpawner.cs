@@ -291,6 +291,7 @@ public partial class EnemySpawner : Node
         }
 
         // 设置奖励（配置未指定时使用敌人默认值）
+        enemy.EnemyDataId = config.EnemyId;
         if (config.ExpReward > 0) enemy.ExpReward = config.ExpReward;
         if (config.ResourceReward > 0) enemy.ResourceReward = config.ResourceReward;
 

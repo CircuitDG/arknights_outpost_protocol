@@ -1,17 +1,20 @@
 using Godot;
 using OutpostProtocol.Core.EventBus;
-using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Building;
+using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Enemy;
 using OutpostProtocol.Gameplay.Character.Operator;
 using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
+using OutpostProtocol.UI.Views;
+using System.Collections.Generic;
+using System.Text;
 
 namespace OutpostProtocol.UI.Controllers;
 
 /// <summary>
 /// 核心 HUD 控制器
-/// 事件驱动更新：博士 HP/体力、天数/阶段/倒计时、资源、干员状态、波次信息、阶段引导
+/// 左上生存状态、顶部中间天数/阶段/波次、右侧干员卡牌（竖排）、底部 MC 物品栏、背包面板、悬停详情
 /// </summary>
 public partial class HUDController : Node
 {
@@ -23,8 +26,6 @@ public partial class HUDController : Node
     private Label _dayLabel;
     private Label _phaseLabel;
     private ProgressBar _phaseBar;
-    private Label _operatorLabel;
-    private Label _skillLabel;
     private Label _waveLabel;
     private Label _phaseNotice;
     private Control _phaseNoticePanel;
@@ -39,16 +40,42 @@ public partial class HUDController : Node
     private Button _settingsToggleButton;
     private Control _settingsPanel;
 
-    private readonly Control[] _skillSlots = new Control[4];
-    private readonly TextureRect[] _skillIcons = new TextureRect[4];
-    private readonly TextureProgressBar[] _skillCooldowns = new TextureProgressBar[4];
-    private readonly Label[] _skillKeys = new Label[4];
-    private readonly Label[] _skillStatuses = new Label[4];
+    // 干员卡牌（右侧竖排）
+    private VBoxContainer _operatorCardContainer;
+    private readonly List<OperatorCard> _operatorCards = new();
+    private readonly Dictionary<Operator, OperatorCard> _cardByOperator = new();
     private Operator _selectedOperator;
+
+    // 物品栏（MC 风格）
+    private HBoxContainer _hotbarContainer;
+    private readonly List<Panel> _hotbarPanels = new();
+    private readonly List<TextureRect> _hotbarIcons = new();
+    private readonly List<Label> _hotbarCounts = new();
+    private readonly List<Label> _hotbarKeys = new();
+    private static readonly int[] HotbarItemIds = { 1, 2, 3, 4, 5, 0, 0, 0, 0 };
+    private int _selectedHotbarSlot;
+
+    // 背包
+    private Button _backpackButton;
+    private InventoryPanel _inventoryPanel;
+
+    // 悬停详情
+    private Panel _tooltipPanel;
+    private Label _tooltipTitle;
+    private Label _tooltipLabel;
+    private OperatorCard _hoveredCard;
+    private OperatorCard _pendingCard;
+    private float _hoverTimer;
+    private const float HoverDelay = 0.45f;
 
     private TowerBuilder _towerBuilder;
     private EnemySpawner _spawner;
     private Backpack _backpack;
+    private Doctor _doctor;
+
+    private float _uiRefreshTimer;
+    private static readonly StyleBoxFlat HotbarStyle = CreateHotbarStyle(new Color(0.12f, 0.1f, 0.08f, 0.88f), new Color(0.38f, 0.3f, 0.19f, 1f));
+    private static readonly StyleBoxFlat HotbarSelectedStyle = CreateHotbarStyle(new Color(0.22f, 0.18f, 0.12f, 0.95f), new Color(0.95f, 0.78f, 0.35f, 1f));
 
     public override void _Ready()
     {
@@ -57,12 +84,10 @@ public partial class HUDController : Node
         _staminaLabel = GetNode<Label>("../Root/TopLeftVBox/StaminaLabel");
         _staminaBar = GetNode<ProgressBar>("../Root/TopLeftVBox/StaminaBar");
         _resourceLabel = GetNode<Label>("../Root/TopLeftVBox/ResourceLabel");
-        _dayLabel = GetNode<Label>("../Root/TopRightVBox/DayLabel");
-        _phaseLabel = GetNode<Label>("../Root/TopRightVBox/PhaseLabel");
-        _phaseBar = GetNode<ProgressBar>("../Root/TopRightVBox/PhaseBar");
-        _operatorLabel = GetNode<Label>("../Root/BottomCenterHBox/OperatorLabel");
-        _skillLabel = GetNode<Label>("../Root/BottomRightVBox/SkillLabel");
-        _waveLabel = GetNode<Label>("../Root/BottomLeftVBox/WaveLabel");
+        _dayLabel = GetNode<Label>("../Root/CenterTopHBox/DayLabel");
+        _phaseLabel = GetNode<Label>("../Root/CenterTopHBox/PhaseLabel");
+        _phaseBar = GetNode<ProgressBar>("../Root/CenterTopHBox/PhaseBar");
+        _waveLabel = GetNode<Label>("../Root/CenterTopHBox/WaveLabel");
         _phaseNoticePanel = GetNodeOrNull<Control>("../Root/PhaseNoticePanel");
         _phaseNotice = GetNodeOrNull<Label>("../Root/PhaseNoticePanel/PhaseNotice");
         _coreHealthLabel = GetNodeOrNull<Label>("../Root/TopLeftVBox/CoreHealthLabel");
@@ -74,31 +99,31 @@ public partial class HUDController : Node
         _settingsToggleButton = GetNodeOrNull<Button>("../Root/SettingsToggleButton");
         _settingsPanel = GetNodeOrNull<Control>("../../UICanvas/SettingsPanel");
 
+        _operatorCardContainer = GetNode<VBoxContainer>("../Root/OperatorCardsScroll/OperatorCardContainer");
+        _hotbarContainer = GetNode<HBoxContainer>("../Root/HotbarContainer");
+        _backpackButton = GetNode<Button>("../Root/HotbarContainer/BackpackButton");
+        _inventoryPanel = GetNodeOrNull<InventoryPanel>("../Root/InventoryPanel");
+        _tooltipPanel = GetNodeOrNull<Panel>("../Root/TooltipPanel");
+        _tooltipTitle = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipTitle");
+        _tooltipLabel = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipLabel");
+
         FindOutpostCore();
 
         if (_helpToggleButton != null) _helpToggleButton.Pressed += ToggleHelp;
         if (_helpCloseButton != null) _helpCloseButton.Pressed += ToggleHelp;
         if (_settingsToggleButton != null) _settingsToggleButton.Pressed += ToggleSettings;
+        if (_backpackButton != null) _backpackButton.Pressed += ToggleInventory;
+        if (_inventoryPanel != null) _inventoryPanel.Closed += OnInventoryClosed;
 
-        // 技能栏（F1-F4）
-        for (int i = 1; i <= 4; i++)
-        {
-            var slot = GetNodeOrNull<Control>($"../Root/BottomRightVBox/SkillBar/SkillSlot_{i}");
-            _skillSlots[i - 1] = slot;
-            if (slot == null) continue;
-            _skillIcons[i - 1] = slot.GetNodeOrNull<TextureRect>("SkillIcon");
-            _skillCooldowns[i - 1] = slot.GetNodeOrNull<TextureProgressBar>("SkillCooldown");
-            _skillKeys[i - 1] = slot.GetNodeOrNull<Label>("SkillKey");
-            _skillStatuses[i - 1] = slot.GetNodeOrNull<Label>("SkillStatus");
-        }
+        BuildHotbar();
 
         _towerBuilder = GetNodeOrNull<TowerBuilder>("../../TowerBuilder");
         _spawner = GetNodeOrNull<EnemySpawner>("../../EnemySpawner");
 
-        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Node2D;
+        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Doctor;
+        _doctor = doctor;
         _backpack = doctor?.GetNodeOrNull<Backpack>("Backpack");
 
-        // 订阅事件（事件驱动，不轮询）
         var eb = EventBus.Instance;
         eb.DoctorHealthChanged += OnDoctorHealthChanged;
         eb.DoctorStaminaChanged += OnDoctorStaminaChanged;
@@ -116,7 +141,6 @@ public partial class HUDController : Node
         eb.SkillCooldownUpdated += OnSkillCooldownUpdated;
 
         RefreshAll();
-        RefreshSkillBar();
         GD.Print("[HUD] 初始化完成");
     }
 
@@ -142,8 +166,316 @@ public partial class HUDController : Node
         if (_helpToggleButton != null) _helpToggleButton.Pressed -= ToggleHelp;
         if (_helpCloseButton != null) _helpCloseButton.Pressed -= ToggleHelp;
         if (_settingsToggleButton != null) _settingsToggleButton.Pressed -= ToggleSettings;
+        if (_backpackButton != null) _backpackButton.Pressed -= ToggleInventory;
+        if (_inventoryPanel != null) _inventoryPanel.Closed -= OnInventoryClosed;
 
-        UpdateSkillBar(null);
+        HideTooltip();
+    }
+
+    public override void _Process(double delta)
+    {
+        _uiRefreshTimer += (float)delta;
+
+        // 悬停延迟：停留一小段时间后才显示详情框
+        if (_pendingCard != null && (_tooltipPanel == null || !_tooltipPanel.Visible))
+        {
+            _hoverTimer -= (float)delta;
+            if (_hoverTimer <= 0)
+            {
+                ShowTooltip(_pendingCard);
+            }
+        }
+
+        if (_uiRefreshTimer >= 0.15f)
+        {
+            _uiRefreshTimer = 0;
+            RefreshOperatorCards();
+            RefreshHotbar();
+            if (_tooltipPanel != null && _tooltipPanel.Visible && _hoveredCard != null)
+            {
+                UpdateTooltip(_hoveredCard);
+            }
+        }
+    }
+
+    // ============================================================
+    // 干员卡牌
+    // ============================================================
+
+    private void RefreshOperatorCards()
+    {
+        if (_operatorCardContainer == null) return;
+
+        var ops = GetTree().GetNodesInGroup("operators");
+        var seen = new HashSet<Operator>();
+
+        foreach (var node in ops)
+        {
+            if (node is not Operator op) continue;
+            seen.Add(op);
+
+            if (!_cardByOperator.TryGetValue(op, out var card))
+            {
+                card = new OperatorCard();
+                card.Setup(op);
+                card.Selected += OnCardSelected;
+                card.HoverStarted += OnCardHoverStarted;
+                card.HoverEnded += OnCardHoverEnded;
+                _operatorCardContainer.AddChild(card);
+                _operatorCards.Add(card);
+                _cardByOperator[op] = card;
+            }
+        }
+
+        // 清理已消失的干员卡牌
+        for (int i = _operatorCards.Count - 1; i >= 0; i--)
+        {
+            var card = _operatorCards[i];
+            if (card.Operator == null || !seen.Contains(card.Operator))
+            {
+                if (_hoveredCard == card) HideTooltip();
+                if (_pendingCard == card) _pendingCard = null;
+                card.Selected -= OnCardSelected;
+                card.HoverStarted -= OnCardHoverStarted;
+                card.HoverEnded -= OnCardHoverEnded;
+                card.QueueFree();
+                _cardByOperator.Remove(card.Operator);
+                _operatorCards.RemoveAt(i);
+            }
+        }
+
+        foreach (var card in _operatorCards)
+        {
+            card.Refresh();
+            card.SetSelected(card.Operator == _selectedOperator);
+        }
+    }
+
+    private void OnCardSelected(OperatorCard card)
+    {
+        if (card?.Operator == null || _doctor == null) return;
+        _doctor.SelectOperator(card.Operator);
+    }
+
+    private void OnCardHoverStarted(OperatorCard card)
+    {
+        _pendingCard = card;
+        _hoverTimer = HoverDelay;
+    }
+
+    private void OnCardHoverEnded(OperatorCard card)
+    {
+        if (_pendingCard == card || _hoveredCard == card)
+        {
+            HideTooltip();
+        }
+    }
+
+    private void ShowTooltip(OperatorCard card)
+    {
+        if (_tooltipPanel == null || card?.Operator == null) return;
+
+        _hoveredCard = card;
+        _pendingCard = null;
+        UpdateTooltip(card);
+
+        // 显示在卡牌左侧，避免与右侧列表、底部物品栏重叠
+        Vector2 cardPos = card.GlobalPosition;
+        var vpSize = GetViewport().GetVisibleRect().Size;
+        float x = Mathf.Clamp(cardPos.X - _tooltipPanel.Size.X - 14, 8, Mathf.Max(8, vpSize.X - _tooltipPanel.Size.X - 8));
+        float y = Mathf.Clamp(cardPos.Y, 8, Mathf.Max(8, vpSize.Y - _tooltipPanel.Size.Y - 8));
+        _tooltipPanel.Position = new Vector2(x, y);
+
+        _tooltipPanel.Visible = true;
+        _tooltipPanel.Modulate = new Color(1, 1, 1, 0);
+        var tween = CreateTween();
+        tween.TweenProperty(_tooltipPanel, "modulate:a", 1.0f, 0.12f);
+    }
+
+    private void UpdateTooltip(OperatorCard card)
+    {
+        if (_tooltipPanel == null || _tooltipLabel == null || card?.Operator == null) return;
+
+        var op = card.Operator;
+        var sb = new StringBuilder();
+        int maxHp = op.Health?.MaxHealth ?? 0;
+        int curHp = op.Health?.CurrentHealth ?? 0;
+
+        if (_tooltipTitle != null)
+        {
+            _tooltipTitle.Text = $"[{op.EntityName}] Lv.{op.CurrentLevel} · {op.Data?.ClassType ?? "未知职业"}";
+        }
+
+        sb.AppendLine($"HP: {curHp}/{maxHp}   ATK: {op.Attack?.AttackDamage ?? 0}");
+        sb.AppendLine($"防御: {op.Data?.BaseDefense ?? 0}   心情: {op.Morale}/100");
+        sb.AppendLine($"状态: {GetOperatorStateText(op)}");
+        sb.AppendLine();
+        sb.AppendLine("── 技能 ──");
+
+        var skill = op.Skill?.GetSkill(1);
+        if (skill != null)
+        {
+            sb.AppendLine($"{skill.Name}   冷却 {skill.Cooldown:F1}s   体力 {skill.StaminaCost:F0}");
+            sb.AppendLine(skill.Description);
+            if (op.Skill.IsSkillReady(1))
+            {
+                sb.AppendLine("状态: ✅ 就绪（F1 释放）");
+            }
+            else
+            {
+                float progress = op.Skill.GetCooldownProgress(1);
+                sb.AppendLine($"状态: ⏳ 冷却中 {skill.Cooldown * progress:F1}s");
+            }
+        }
+        else
+        {
+            sb.AppendLine("未绑定技能");
+        }
+
+        _tooltipLabel.Text = sb.ToString();
+    }
+
+    private void HideTooltip()
+    {
+        _hoveredCard = null;
+        _pendingCard = null;
+        _hoverTimer = 0;
+        if (_tooltipPanel != null)
+        {
+            _tooltipPanel.Visible = false;
+            _tooltipPanel.Modulate = Colors.White;
+        }
+    }
+
+    private static string GetOperatorStateText(Operator op)
+    {
+        if (op.IsDead || op.State == OperatorState.Down) return "💀 战斗不能";
+        return op.State switch
+        {
+            OperatorState.Attacking or OperatorState.Chasing => "⚔ 作战中",
+            OperatorState.Following => "▸ 跟随中",
+            OperatorState.Moving => "▸ 移动中",
+            OperatorState.Resting => "◈ 休整中",
+            _ => "◆ 待命",
+        };
+    }
+
+    // ============================================================
+    // MC 式物品栏
+    // ============================================================
+
+    private void BuildHotbar()
+    {
+        if (_hotbarContainer == null) return;
+
+        for (int i = 0; i < HotbarItemIds.Length; i++)
+        {
+            var slot = new Control
+            {
+                CustomMinimumSize = new Vector2(36, 36),
+            };
+            _hotbarContainer.AddChild(slot);
+
+            var panel = new Panel();
+            panel.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            panel.AddThemeStyleboxOverride("panel", HotbarStyle);
+            panel.MouseFilter = Control.MouseFilterEnum.Ignore;
+            slot.AddChild(panel);
+
+            var icon = new TextureRect
+            {
+                Position = new Vector2(3, 3),
+                Size = new Vector2(30, 30),
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            };
+            slot.AddChild(icon);
+
+            var count = new Label
+            {
+                Position = new Vector2(16, 20),
+                Size = new Vector2(18, 14),
+                Text = "",
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            };
+            count.AddThemeFontSizeOverride("font_size", 11);
+            count.AddThemeColorOverride("font_color", Colors.White);
+            count.AddThemeColorOverride("font_shadow_color", Colors.Black);
+            count.AddThemeConstantOverride("shadow_offset_x", 1);
+            count.AddThemeConstantOverride("shadow_offset_y", 1);
+            slot.AddChild(count);
+
+            var key = new Label
+            {
+                Position = new Vector2(2, 0),
+                Size = new Vector2(18, 12),
+                Text = i < 9 ? $"{i + 1}" : "",
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            };
+            key.AddThemeFontSizeOverride("font_size", 9);
+            key.AddThemeColorOverride("font_color", new Color(0.75f, 0.68f, 0.52f));
+            slot.AddChild(key);
+
+            _hotbarPanels.Add(panel);
+            _hotbarIcons.Add(icon);
+            _hotbarCounts.Add(count);
+            _hotbarKeys.Add(key);
+        }
+    }
+
+    private void RefreshHotbar()
+    {
+        if (_backpack == null || _hotbarPanels.Count == 0) return;
+
+        for (int i = 0; i < _hotbarPanels.Count; i++)
+        {
+            int itemId = HotbarItemIds[i];
+            _hotbarPanels[i].AddThemeStyleboxOverride("panel", i == _selectedHotbarSlot ? HotbarSelectedStyle : HotbarStyle);
+
+            if (itemId <= 0)
+            {
+                _hotbarIcons[i].Texture = null;
+                _hotbarCounts[i].Text = "";
+                continue;
+            }
+
+            int count = _backpack.GetCount(itemId);
+            var item = DataManager.Instance?.GetItem(itemId);
+            _hotbarIcons[i].Texture = item != null ? GD.Load<Texture2D>(item.IconPath) : null;
+            _hotbarIcons[i].Modulate = count > 0 ? Colors.White : new Color(1, 1, 1, 0.3f);
+            _hotbarCounts[i].Text = count > 0 ? count.ToString() : "";
+        }
+    }
+
+    private void SelectHotbarSlot(int index)
+    {
+        if (index < 0 || index >= _hotbarPanels.Count) return;
+        _selectedHotbarSlot = index;
+        RefreshHotbar();
+    }
+
+    private void CycleHotbar(int direction)
+    {
+        if (_hotbarPanels.Count == 0) return;
+        SelectHotbarSlot((_selectedHotbarSlot + direction + _hotbarPanels.Count) % _hotbarPanels.Count);
+    }
+
+    // ============================================================
+    // 背包
+    // ============================================================
+
+    private void ToggleInventory()
+    {
+        if (_inventoryPanel == null) return;
+        _inventoryPanel.SetOpen(!_inventoryPanel.Visible, _backpack);
+    }
+
+    private void OnInventoryClosed()
+    {
+        // 面板内关闭按钮已隐藏自身
     }
 
     // ============================================================
@@ -180,7 +512,7 @@ public partial class HUDController : Node
 
         if (_coreStatusLabel != null)
         {
-            _coreStatusLabel.Text = _outpostCore.IsDestroyed ? "💀 已摧毁" : "🛡️ 运转中";
+            _coreStatusLabel.Text = _outpostCore.IsDestroyed ? "💀 已摧毁" : "◆ 运转中";
             _coreStatusLabel.Modulate = _outpostCore.IsDestroyed ? Colors.Red : Colors.Green;
         }
     }
@@ -194,64 +526,119 @@ public partial class HUDController : Node
         }
     }
 
-    /// <summary>切换操作指引面板</summary>
     private void ToggleHelp()
     {
-        if (_helpPanel != null)
-        {
-            _helpPanel.Visible = !_helpPanel.Visible;
-        }
+        if (_helpPanel != null) _helpPanel.Visible = !_helpPanel.Visible;
     }
 
-    /// <summary>切换游戏内设置面板</summary>
     private void ToggleSettings()
     {
-        if (_settingsPanel != null)
-        {
-            _settingsPanel.Visible = !_settingsPanel.Visible;
-        }
+        if (_settingsPanel != null) _settingsPanel.Visible = !_settingsPanel.Visible;
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        // T 键打开天赋树
-        if (@event is InputEventKey keyEvt && keyEvt.Pressed && keyEvt.Keycode == Key.T)
+        // 背包打开时优先处理关闭
+        if (@event is InputEventKey invKey && invKey.Pressed)
         {
-            GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
+            if (_inventoryPanel != null && _inventoryPanel.Visible)
+            {
+                if (invKey.Keycode == Key.B || invKey.Keycode == Key.Escape)
+                {
+                    _inventoryPanel.SetOpen(false);
+                    GetViewport().SetInputAsHandled();
+                }
+                return;
+            }
+        }
+
+        if (@event is InputEventKey keyEvt && keyEvt.Pressed)
+        {
+            switch (keyEvt.Keycode)
+            {
+                case Key.T:
+                    GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
+                    GetViewport().SetInputAsHandled();
+                    return;
+                case Key.H:
+                    ToggleHelp();
+                    GetViewport().SetInputAsHandled();
+                    return;
+                case Key.O:
+                    ToggleSettings();
+                    GetViewport().SetInputAsHandled();
+                    return;
+                case Key.B:
+                    ToggleInventory();
+                    GetViewport().SetInputAsHandled();
+                    return;
+            }
+        }
+
+        // 建设期：数字键 1/2/3 选择防御塔
+        if (GameManager.Instance?.CurrentState == GameState.Build && _towerBuilder != null)
+        {
+            if (@event is InputEventKey buildKey && buildKey.Pressed)
+            {
+                switch (buildKey.Keycode)
+                {
+                    case Key.Key1:
+                        _towerBuilder.StartBuildMode(0);
+                        GetViewport().SetInputAsHandled();
+                        return;
+                    case Key.Key2:
+                        _towerBuilder.StartBuildMode(1);
+                        GetViewport().SetInputAsHandled();
+                        return;
+                    case Key.Key3:
+                        _towerBuilder.StartBuildMode(2);
+                        GetViewport().SetInputAsHandled();
+                        return;
+                    case Key.Escape:
+                        _towerBuilder.ExitBuildMode();
+                        GetViewport().SetInputAsHandled();
+                        return;
+                }
+            }
             return;
         }
 
-        if (@event is InputEventKey helpKey && helpKey.Pressed && helpKey.Keycode == Key.H)
+        // 非建设期：数字键选择物品栏
+        if (@event is InputEventKey hotKey && hotKey.Pressed)
         {
-            ToggleHelp();
-            return;
+            int index = hotKey.Keycode switch
+            {
+                Key.Key1 => 0,
+                Key.Key2 => 1,
+                Key.Key3 => 2,
+                Key.Key4 => 3,
+                Key.Key5 => 4,
+                Key.Key6 => 5,
+                Key.Key7 => 6,
+                Key.Key8 => 7,
+                Key.Key9 => 8,
+                _ => -1,
+            };
+            if (index >= 0)
+            {
+                SelectHotbarSlot(index);
+                GetViewport().SetInputAsHandled();
+            }
         }
 
-        if (@event is InputEventKey settingsKey && settingsKey.Pressed && settingsKey.Keycode == Key.O)
+        // 鼠标滚轮循环切换
+        if (@event is InputEventMouseButton wheel && wheel.Pressed)
         {
-            ToggleSettings();
-            return;
-        }
-
-        // 建设期快捷键：1/2/3 选择塔，ESC 取消
-        if (GameManager.Instance?.CurrentState != GameState.Build || _towerBuilder == null) return;
-
-        if (@event is not InputEventKey keyEvent || !keyEvent.Pressed) return;
-
-        switch (keyEvent.Keycode)
-        {
-            case Key.Key1:
-                _towerBuilder.StartBuildMode(0);
-                break;
-            case Key.Key2:
-                _towerBuilder.StartBuildMode(1);
-                break;
-            case Key.Key3:
-                _towerBuilder.StartBuildMode(2);
-                break;
-            case Key.Escape:
-                _towerBuilder.ExitBuildMode();
-                break;
+            if (wheel.ButtonIndex == MouseButton.WheelUp)
+            {
+                CycleHotbar(-1);
+                GetViewport().SetInputAsHandled();
+            }
+            else if (wheel.ButtonIndex == MouseButton.WheelDown)
+            {
+                CycleHotbar(1);
+                GetViewport().SetInputAsHandled();
+            }
         }
     }
 
@@ -276,6 +663,11 @@ public partial class HUDController : Node
     private void OnInventoryChanged()
     {
         RefreshResources();
+        RefreshHotbar();
+        if (_inventoryPanel != null && _inventoryPanel.Visible)
+        {
+            _inventoryPanel.Refresh(_backpack);
+        }
     }
 
     private void OnGameStateChanged(GameState newState)
@@ -283,7 +675,6 @@ public partial class HUDController : Node
         _phaseLabel.Text = GetPhaseText(newState);
         ShowPhaseNotice(newState);
 
-        // 离开建设期自动退出建造模式
         if (newState != GameState.Build && _towerBuilder != null && _towerBuilder.IsBuildingMode)
         {
             _towerBuilder.ExitBuildMode();
@@ -317,27 +708,28 @@ public partial class HUDController : Node
 
     private void OnOperatorChanged(Node2D op)
     {
-        RefreshOperators();
+        RefreshOperatorCards();
     }
 
     private void OnOperatorChanged(Node2D op, int newLevel)
     {
-        RefreshOperators();
+        RefreshOperatorCards();
     }
 
     private void OnSelectedOperatorChanged(Node2D op)
     {
-        UpdateSkillBar(op as Operator);
+        _selectedOperator = op as Operator;
+        RefreshOperatorCards();
     }
 
     private void OnSkillCast(int slot, string skillId, Node2D caster)
     {
-        RefreshSkillBar();
+        RefreshOperatorCards();
     }
 
     private void OnSkillCooldownUpdated(int slot, float progress)
     {
-        RefreshSkillBar();
+        RefreshOperatorCards();
     }
 
     // ============================================================
@@ -346,11 +738,10 @@ public partial class HUDController : Node
 
     private void RefreshAll()
     {
-        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Node2D;
-        if (doctor != null)
+        if (_doctor != null)
         {
-            OnDoctorHealthChanged(doctor.Get("CurrentHealth").As<float>(), doctor.Get("MaxHealthValue").As<float>());
-            OnDoctorStaminaChanged(doctor.Get("CurrentStamina").As<float>(), doctor.Get("MaxStaminaValue").As<float>());
+            OnDoctorHealthChanged(_doctor.CurrentHealth, _doctor.MaxHealthValue);
+            OnDoctorStaminaChanged(_doctor.CurrentStamina, _doctor.MaxStaminaValue);
         }
 
         var gm = GameManager.Instance;
@@ -358,8 +749,9 @@ public partial class HUDController : Node
         _phaseLabel.Text = GetPhaseText(gm?.CurrentState ?? GameState.Explore);
 
         RefreshResources();
-        RefreshOperators();
         RefreshWave();
+        RefreshOperatorCards();
+        RefreshHotbar();
     }
 
     private void RefreshResources()
@@ -372,22 +764,6 @@ public partial class HUDController : Node
         _resourceLabel.Text = $"木材 ×{wood}  铁皮 ×{iron}  源石 ×{originium}";
     }
 
-    private void RefreshOperators()
-    {
-        var text = new System.Text.StringBuilder("干员: ");
-        bool first = true;
-        foreach (var node in GetTree().GetNodesInGroup("operators"))
-        {
-            if (node is Operator op)
-            {
-                if (!first) text.Append(" | ");
-                first = false;
-                text.Append($"{op.EntityName} Lv.{op.CurrentLevel} HP:{op.Health?.CurrentHealth}/{op.Health?.MaxHealth}");
-            }
-        }
-        _operatorLabel.Text = text.ToString();
-    }
-
     private void RefreshWave()
     {
         if (_spawner == null)
@@ -398,89 +774,14 @@ public partial class HUDController : Node
         _waveLabel.Text = $"波次 {_spawner.CurrentWaveNumber} | 活跃:{_spawner.IsWaveActive} | 剩余:{_spawner.GetRemainingEnemies()}";
     }
 
-    /// <summary>绑定/解绑选中干员的技能事件并刷新技能栏</summary>
-    private void UpdateSkillBar(Operator op)
-    {
-        if (_selectedOperator?.Skill != null)
-        {
-            _selectedOperator.Skill.SkillCasted -= OnLocalSkillCasted;
-            _selectedOperator.Skill.CooldownUpdated -= OnLocalCooldownUpdated;
-            _selectedOperator.Skill.CastStateChanged -= OnLocalCastStateChanged;
-        }
-
-        _selectedOperator = op;
-
-        if (_selectedOperator?.Skill != null)
-        {
-            _selectedOperator.Skill.SkillCasted += OnLocalSkillCasted;
-            _selectedOperator.Skill.CooldownUpdated += OnLocalCooldownUpdated;
-            _selectedOperator.Skill.CastStateChanged += OnLocalCastStateChanged;
-        }
-
-        RefreshSkillBar();
-    }
-
-    private void OnLocalSkillCasted(int slot, SkillData skill)
-    {
-        RefreshSkillBar();
-    }
-
-    private void OnLocalCooldownUpdated(int slot, float progress)
-    {
-        RefreshSkillBar();
-    }
-
-    private void OnLocalCastStateChanged(int slot, bool casting)
-    {
-        RefreshSkillBar();
-    }
-
-    private void RefreshSkillBar()
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            var slot = _skillSlots[i];
-            if (slot == null) continue;
-
-            var skillComp = _selectedOperator?.Skill;
-            var skill = skillComp?.GetSkill(i + 1);
-            if (skill == null)
-            {
-                slot.Visible = false;
-                continue;
-            }
-
-            slot.Visible = true;
-
-            if (_skillKeys[i] != null)
-            {
-                _skillKeys[i].Text = $"F{i + 1}";
-            }
-
-            float progress = skillComp.GetCooldownProgress(i + 1);
-            if (_skillCooldowns[i] != null)
-            {
-                _skillCooldowns[i].Value = progress * 100;
-                _skillCooldowns[i].Visible = progress > 0.001f;
-            }
-
-            bool ready = skillComp.IsSkillReady(i + 1);
-            if (_skillStatuses[i] != null)
-            {
-                _skillStatuses[i].Text = ready ? "✓" : "⏳";
-                _skillStatuses[i].Modulate = ready ? Colors.Green : Colors.Orange;
-            }
-        }
-    }
-
     private void ShowPhaseNotice(GameState state)
     {
         string text = state switch
         {
-            GameState.Explore => "☀️ 探索期 — 外出采集资源（靠近资源点按 E）",
-            GameState.Build => "🌆 建设期 — 按 1/2/3 选择防御塔建造",
-            GameState.Battle => "🌙 防守期 — 守住前哨站！",
-            GameState.Rest => "🌅 休整期 — 修复与备战",
+            GameState.Explore => "⛏ 探索期 — 外出采集资源（靠近资源点按 E）",
+            GameState.Build => "🏗 建设期 — 按 1/2/3 选择防御塔建造",
+            GameState.Battle => "⚔ 防守期 — 守住前哨站！",
+            GameState.Rest => "🛌 休整期 — 修复与备战",
             GameState.GameOver => "💀 博士倒下，对局结束",
             _ => string.Empty,
         };
@@ -511,4 +812,22 @@ public partial class HUDController : Node
             _ => "加载中",
         };
     }
+
+    private static StyleBoxFlat CreateHotbarStyle(Color bg, Color border)
+    {
+        return new StyleBoxFlat
+        {
+            BgColor = bg,
+            BorderColor = border,
+            BorderWidthLeft = 2,
+            BorderWidthTop = 2,
+            BorderWidthRight = 2,
+            BorderWidthBottom = 2,
+            CornerRadiusTopLeft = 3,
+            CornerRadiusTopRight = 3,
+            CornerRadiusBottomRight = 3,
+            CornerRadiusBottomLeft = 3,
+        };
+    }
+
 }
