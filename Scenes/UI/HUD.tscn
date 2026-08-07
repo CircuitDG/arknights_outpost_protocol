@@ -412,6 +412,14 @@ text = "减速凝胶塔"
 custom_minimum_size = Vector2(0, 40)
 text = "源石爆裂塔"
 
+[node name="TowerButton_4" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "医疗无人机平台"
+
+[node name="TowerButton_5" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "铁丝网墙"
+
 [node name="HelpPanel" type="Panel" parent="Root"]
 anchor_left = 0.5
 anchor_top = 0.5

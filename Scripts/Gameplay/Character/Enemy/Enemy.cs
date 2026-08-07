@@ -75,6 +75,9 @@ public partial class Enemy : BaseEntity
         // 加入敌人组（小地图/统计使用）
         AddToGroup("enemies");
 
+        // 按敌人类型应用基础属性（源石虫/士兵/机动盾兵/双持剑士/炮击组长/重装防御组长）
+        ApplyEnemyStats();
+
         // 敌人难度随天数增长
         var gameManager = GameManager.Instance;
         if (gameManager != null && gameManager.DayCount > 1)
@@ -88,6 +91,31 @@ public partial class Enemy : BaseEntity
         }
 
         GD.Print($"[{EntityName}] 敌人初始化完成 — HP:{Health?.CurrentHealth}/{Health?.MaxHealth}");
+    }
+
+    /// <summary>按 EnemyDataId 应用敌人基础属性</summary>
+    private void ApplyEnemyStats()
+    {
+        (int Hp, int Atk, float Speed, float Range, int CoreDmg, int Exp, int Res) cfg = EnemyDataId switch
+        {
+            2 => (160, 22, 105f, 80f, 12, 16, 6),    // 士兵
+            3 => (260, 18, 80f, 70f, 14, 22, 8),     // 机动盾兵
+            4 => (150, 32, 135f, 75f, 14, 20, 7),    // 双持剑士
+            5 => (140, 28, 90f, 160f, 18, 30, 9),    // 炮击组长（远程）
+            6 => (420, 30, 70f, 75f, 22, 45, 12),    // 重装防御组长（精英）
+            _ => (100, 15, 120f, 80f, 10, 10, 5),    // 源石虫
+        };
+
+        if (Health != null) Health.MaxHealth = cfg.Hp;
+        if (Attack != null)
+        {
+            Attack.AttackDamage = cfg.Atk;
+            Attack.AttackRange = cfg.Range;
+        }
+        if (Movement != null) Movement.Speed = cfg.Speed;
+        CoreDamage = cfg.CoreDmg;
+        ExpReward = cfg.Exp;
+        ResourceReward = cfg.Res;
     }
 
     public override void _ExitTree()
@@ -127,6 +155,10 @@ public partial class Enemy : BaseEntity
         string path = EnemyDataId switch
         {
             2 => "res://Assets/Art/Enemies/enemy_soldier.png",
+            3 => "res://Assets/Art/Enemies/enemy_shield.png",
+            4 => "res://Assets/Art/Enemies/enemy_dual.png",
+            5 => "res://Assets/Art/Enemies/enemy_artillery.png",
+            6 => "res://Assets/Art/Enemies/enemy_heavy.png",
             _ => "res://Assets/Art/Enemies/enemy_slug.png",
         };
 
@@ -285,6 +317,7 @@ public partial class Enemy : BaseEntity
     protected override void OnHealthDepleted()
     {
         base.OnHealthDepleted();
+        OutpostProtocol.Managers.AudioManager.Instance?.Play("enemy_die", -10f);
 
         // 生成场景掉落物
         SpawnLoot();

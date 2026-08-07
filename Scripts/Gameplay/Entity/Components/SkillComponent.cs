@@ -240,6 +240,7 @@ public partial class SkillComponent : Node
         if (!_skillData.TryGetValue(skillId, out var skill)) return;
 
         GD.Print($"[SkillComponent] {_owner.EntityName} 释放技能: {skill.Name}");
+        OutpostProtocol.Managers.AudioManager.Instance?.Play("skill");
 
         // 进入冷却
         _cooldowns[skillId] = skill.Cooldown;

@@ -402,6 +402,7 @@ public partial class Doctor : CharacterBody2D
 
         _currentHealth -= damage;
         if (_currentHealth < 0) _currentHealth = 0;
+        OutpostProtocol.Managers.AudioManager.Instance?.Play("hurt", -6f);
 
         GD.Print($"[Doctor] 受到 {damage} 点伤害，剩余 HP:{_currentHealth}");
         EmitHealthChanged();
@@ -517,6 +518,7 @@ public partial class Doctor : CharacterBody2D
         if (nearest != null)
         {
             nearest.ForcePickup(this);
+            OutpostProtocol.Managers.AudioManager.Instance?.Play("pickup");
             GD.Print("[Doctor] 按 E 拾取物品");
             return;
         }
@@ -571,6 +573,12 @@ public partial class Doctor : CharacterBody2D
             if (enemy.EnemyDataId == 2 && GD.Randf() < 0.35f)
             {
                 CollectionManager.TryGrantRandom();
+            }
+
+            // 图纸掉落：精英敌人 25% 概率掉落图纸
+            if (enemy.EnemyDataId >= 2 && GD.Randf() < 0.25f)
+            {
+                BlueprintManager.TryGrantFromElite(1f);
             }
         }
     }
@@ -785,6 +793,7 @@ public partial class Doctor : CharacterBody2D
         bool success = skillComp.CastSkill(slot);
         if (success)
         {
+            OutpostProtocol.Managers.AudioManager.Instance?.Play("skill");
             GD.Print($"[Doctor] 释放技能 F{slot} — {skill.Name}");
         }
         return success;

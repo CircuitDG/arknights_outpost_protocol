@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "凝胶配方",
+    "description": "解锁「减速凝胶塔」的建造",
+    "iconPath": "res://Assets/Icons/blueprint_gel.png"
+  },
+  {
+    "id": 2,
+    "name": "源石回路",
+    "description": "解锁「源石爆裂塔」的建造",
+    "iconPath": "res://Assets/Icons/blueprint_circuit.png"
+  },
+  {
+    "id": 3,
+    "name": "工业图纸",
+    "description": "解锁「铁丝网墙」的建造",
+    "iconPath": "res://Assets/Icons/blueprint_industry.png"
+  },
+  {
+    "id": 4,
+    "name": "医疗平台设计图",
+    "description": "解锁「医疗无人机平台」的建造",
+    "iconPath": "res://Assets/Icons/blueprint_medic.png"
+  }
+]

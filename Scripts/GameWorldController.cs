@@ -65,10 +65,13 @@ public partial class GameWorldController : Node2D
             GD.Load<PackedScene>("res://Scenes/Buildings/Ballista.tscn"),
             GD.Load<PackedScene>("res://Scenes/Buildings/GelTower.tscn"),
             GD.Load<PackedScene>("res://Scenes/Buildings/ExplosionTower.tscn"),
+            GD.Load<PackedScene>("res://Scenes/Buildings/MedicTower.tscn"),
+            GD.Load<PackedScene>("res://Scenes/Buildings/BarbedWire.tscn"),
         };
-        _builder.BuildWoodCosts = new[] { 20, 20, 30 };
-        _builder.BuildIronCosts = new[] { 5, 5, 8 };
-        _builder.BuildOriginiumCosts = new[] { 0, 0, 2 };
+        _builder.BuildWoodCosts = new[] { 20, 20, 30, 15, 25 };
+        _builder.BuildIronCosts = new[] { 5, 5, 8, 10, 10 };
+        _builder.BuildOriginiumCosts = new[] { 0, 0, 2, 0, 0 };
+        _builder.RequiredBlueprintIds = new[] { 0, 1, 2, 4, 3 };
 
         GD.Print($"[GameWorld] 城市生成完成 — 300x300, 建筑:{BuildingCount}, 资源点:{ResourcePointCount}, 可行走:{_grid.GridDimensions}");
 

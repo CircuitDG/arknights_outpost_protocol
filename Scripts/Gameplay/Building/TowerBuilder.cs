@@ -31,6 +31,9 @@ public partial class TowerBuilder : Node
     [Export] public int[] BuildIronCosts;
     [Export] public int[] BuildOriginiumCosts;
 
+    /// <summary>每座塔解锁所需图纸 ID（0=开局解锁）</summary>
+    [Export] public int[] RequiredBlueprintIds;
+
     [ExportGroup("资源")]
     [Export] public int WoodAmount;
     [Export] public int IronAmount;
@@ -111,6 +114,16 @@ public partial class TowerBuilder : Node
             return;
         }
 
+        // 图纸解锁检查（博士的战术笔记）
+        if (RequiredBlueprintIds != null &&
+            towerIndex < RequiredBlueprintIds.Length &&
+            !OutpostProtocol.Managers.BlueprintManager.Has(RequiredBlueprintIds[towerIndex]))
+        {
+            GD.Print("[TowerBuilder] 未获得对应图纸，无法建造");
+            OutpostProtocol.Core.EventBus.EventBus.Instance.EmitLogMessage("需要先获得对应图纸才能建造", "WARN");
+            return;
+        }
+
         _selectedTowerIndex = towerIndex;
         _isBuildingMode = true;
 
@@ -185,6 +198,7 @@ public partial class TowerBuilder : Node
         tower.GlobalPosition = pos;
 
         GD.Print($"[TowerBuilder] 塔已放置: {tower.Data?.Name ?? "Unknown"} 在 ({pos.X:F0}, {pos.Y:F0})");
+        OutpostProtocol.Managers.AudioManager.Instance?.Play("build");
         EventBus.Instance.EmitTowerBuilt(tower.TowerDataId);
         return true;
     }

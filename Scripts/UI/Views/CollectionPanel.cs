@@ -12,6 +12,8 @@ public partial class CollectionPanel : Control
 {
     private Label _titleLabel;
     private GridContainer _grid;
+    private GridContainer _blueprintGrid;
+    private Label _blueprintTitle;
     private Button _closeButton;
     private bool _built;
 
@@ -76,11 +78,32 @@ public partial class CollectionPanel : Control
         };
         vbox.AddChild(scroll);
 
+        var content = new VBoxContainer();
+        content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        content.AddThemeConstantOverride("separation", 10);
+        scroll.AddChild(content);
+
         _grid = new GridContainer { Columns = 2 };
         _grid.AddThemeConstantOverride("h_separation", 12);
         _grid.AddThemeConstantOverride("v_separation", 12);
         _grid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        scroll.AddChild(_grid);
+        content.AddChild(_grid);
+
+        content.AddChild(new HSeparator());
+
+        _blueprintTitle = new Label
+        {
+            Text = "📜 博士的战术笔记",
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        _blueprintTitle.AddThemeFontSizeOverride("font_size", 18);
+        content.AddChild(_blueprintTitle);
+
+        _blueprintGrid = new GridContainer { Columns = 2 };
+        _blueprintGrid.AddThemeConstantOverride("h_separation", 12);
+        _blueprintGrid.AddThemeConstantOverride("v_separation", 12);
+        _blueprintGrid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        content.AddChild(_blueprintGrid);
 
         _closeButton.Pressed += () => Visible = false;
         _built = true;
@@ -91,6 +114,10 @@ public partial class CollectionPanel : Control
         if (!_built) return;
 
         foreach (var child in _grid.GetChildren())
+        {
+            child.QueueFree();
+        }
+        foreach (var child in _blueprintGrid.GetChildren())
         {
             child.QueueFree();
         }
@@ -109,6 +136,20 @@ public partial class CollectionPanel : Control
         foreach (var card in cards) _grid.AddChild(card);
 
         _titleLabel.Text = $"📖 藏品图鉴（{owned}/{all.Count}）";
+
+        // 图纸（博士的战术笔记）
+        var blueprints = DataManager.Instance?.Blueprints;
+        if (blueprints == null) return;
+        int ownedBp = 0;
+        var bpCards = new List<Control>();
+        foreach (var bp in blueprints.Values)
+        {
+            bool has = BlueprintManager.Has(bp.Id);
+            if (has) ownedBp++;
+            bpCards.Add(CreateBlueprintCard(bp, has));
+        }
+        foreach (var card in bpCards) _blueprintGrid.AddChild(card);
+        _blueprintTitle.Text = $"📜 博士的战术笔记（{ownedBp}/{blueprints.Count}）";
     }
 
     private Control CreateCard(Data.CollectionData item, bool owned)
@@ -180,6 +221,70 @@ public partial class CollectionPanel : Control
         };
         loreLabel.AddThemeFontSizeOverride("font_size", 11);
         vbox.AddChild(loreLabel);
+
+        return panel;
+    }
+
+    private Control CreateBlueprintCard(Data.BlueprintData bp, bool owned)
+    {
+        var panel = new Panel();
+        panel.CustomMinimumSize = new Vector2(330, 72);
+
+        var style = new StyleBoxFlat
+        {
+            BgColor = new Color(0.13f, 0.11f, 0.08f, 0.96f),
+            BorderColor = owned ? new Color(0.85f, 0.72f, 0.4f) : new Color(0.35f, 0.32f, 0.26f),
+            BorderWidthLeft = 2,
+            BorderWidthTop = 2,
+            BorderWidthRight = 2,
+            BorderWidthBottom = 2,
+            CornerRadiusTopLeft = 4,
+            CornerRadiusTopRight = 4,
+            CornerRadiusBottomRight = 4,
+            CornerRadiusBottomLeft = 4,
+        };
+        panel.AddThemeStyleboxOverride("panel", style);
+
+        var hbox = new HBoxContainer();
+        hbox.SetAnchorsPreset(LayoutPreset.FullRect);
+        hbox.OffsetLeft = 10;
+        hbox.OffsetTop = 8;
+        hbox.OffsetRight = -10;
+        hbox.OffsetBottom = -8;
+        hbox.AddThemeConstantOverride("separation", 10);
+        panel.AddChild(hbox);
+
+        var icon = new TextureRect
+        {
+            CustomMinimumSize = new Vector2(44, 44),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            Modulate = owned ? Colors.White : new Color(1, 1, 1, 0.25f),
+        };
+        var tex = GD.Load<Texture2D>(bp.IconPath);
+        if (tex != null) icon.Texture = tex;
+        hbox.AddChild(icon);
+
+        var vbox = new VBoxContainer();
+        vbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        vbox.AddThemeConstantOverride("separation", 3);
+        hbox.AddChild(vbox);
+
+        var nameLabel = new Label
+        {
+            Text = owned ? bp.Name : $"🔒 {bp.Name}（未获得）",
+            Modulate = owned ? new Color(0.92f, 0.82f, 0.55f) : new Color(0.7f, 0.68f, 0.62f),
+        };
+        nameLabel.AddThemeFontSizeOverride("font_size", 14);
+        vbox.AddChild(nameLabel);
+
+        var descLabel = new Label
+        {
+            Text = owned ? bp.Description : "在资源点搜索或击败精英敌人有概率获得",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        descLabel.AddThemeFontSizeOverride("font_size", 12);
+        vbox.AddChild(descLabel);
 
         return panel;
     }

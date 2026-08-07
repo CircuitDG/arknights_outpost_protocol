@@ -155,6 +155,9 @@ public partial class GatherableResource : Node2D
         EventBus.Instance.EmitLogMessage($"采集到 {gatherAmount} 个 {itemName}", "INFO");
         EventBus.Instance.EmitResourceGathered(ItemId, gatherAmount);
 
+        // 图纸掉落：搜索资源点时有概率获得图纸（博士的战术笔记）
+        OutpostProtocol.Managers.BlueprintManager.TryGrantFromSearch();
+
         UpdateVisuals();
 
         // 采空后进入采集/重生状态

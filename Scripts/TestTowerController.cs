@@ -79,6 +79,9 @@ public partial class TestTowerController : Node
         if (!_testsBuilt && DataManager.Instance.IsLoaded)
         {
             _testsBuilt = true;
+            // 测试前置：解锁凝胶/源石回路图纸（对应塔 1/2）
+            OutpostProtocol.Managers.BlueprintManager.Grant(1);
+            OutpostProtocol.Managers.BlueprintManager.Grant(2);
             BuildTowers();
         }
 

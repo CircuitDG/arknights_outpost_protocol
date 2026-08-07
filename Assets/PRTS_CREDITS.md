@@ -20,6 +20,10 @@
 | `Art/Characters/op_ansel.png` | 安赛尔（安塞尔）干员头像 | `头像 安赛尔.png` |
 | `Art/Enemies/enemy_slug.png` | 源石虫敌人头像 | `头像 敌人 源石虫.png` |
 | `Art/Enemies/enemy_soldier.png` | 士兵敌人头像 | `头像 敌人 士兵.png` |
+| `Art/Enemies/enemy_shield.png` | 机动盾兵敌人头像 | `头像 敌人 机动盾兵.png` |
+| `Art/Enemies/enemy_dual.png` | 双持剑士敌人头像 | `头像 敌人 双持剑士.png` |
+| `Art/Enemies/enemy_artillery.png` | 炮击组长敌人头像 | `头像 敌人 炮击组长.png` |
+| `Art/Enemies/enemy_heavy.png` | 重装防御组长敌人头像 | `头像 敌人 重装防御组长.png` |
 | `Art/Towers/tower_ballista.png` | 弩炮塔图标 | `Trap gunctrl 1` |
 | `Art/Towers/tower_explosion.png` | 源石爆破塔图标 | `Trap enable ore 1` |
 | `Art/Towers/tower_gel.png` | 凝胶塔图标（另存 72px 缩略版 `tower_gel_72.png`） | `道具 带框 凝胶.png` |
@@ -30,6 +34,8 @@
 | `Icons/skill_ansel_heal.png` | 安塞尔 技能：治疗范围强化 | `技能 治疗范围强化.png` |
 | `UI/range_ring.png` | 塔射程指示环（程序生成的白色圆环，非 PRTS 素材） | - |
 | `Icons/collection_*.png` | 藏品图鉴占位图标（程序绘制，非 PRTS 素材） | - |
+| `Icons/blueprint_*.png` | 图纸占位图标（程序绘制，非 PRTS 素材） | - |
+| `Audio/*.wav` | 程序合成的占位音效（非 PRTS 素材） | - |
 
 ## 版权说明
 

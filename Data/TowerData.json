@@ -163,5 +163,115 @@
         "specialEffectDescription": "地刺持续 10 秒，范围扩大 30%"
       }
     ]
+  },
+  {
+    "id": 4,
+    "name": "医疗无人机平台",
+    "towerType": "Medic",
+    "baseDamage": 15,
+    "attackRange": 160,
+    "attackSpeed": 1.2,
+    "maxDurability": 90,
+    "upgradeLevels": [
+      {
+        "level": 1,
+        "woodCost": 0,
+        "ironCost": 0,
+        "originiumCost": 0,
+        "damageBonus": 0,
+        "rangeBonus": 0,
+        "speedBonus": 0,
+        "specialEffect": "",
+        "specialEffectDescription": "自动治疗射程内友军"
+      },
+      {
+        "level": 2,
+        "woodCost": 15,
+        "ironCost": 8,
+        "originiumCost": 0,
+        "damageBonus": 30,
+        "rangeBonus": 10,
+        "speedBonus": 10,
+        "specialEffect": "",
+        "specialEffectDescription": "治疗量 +30%"
+      },
+      {
+        "level": 3,
+        "woodCost": 30,
+        "ironCost": 20,
+        "originiumCost": 2,
+        "damageBonus": 30,
+        "rangeBonus": 15,
+        "speedBonus": 10,
+        "specialEffect": "heal_cleanse",
+        "specialEffectDescription": "治疗量 +30%，治疗时驱散一个负面状态"
+      },
+      {
+        "level": 4,
+        "woodCost": 50,
+        "ironCost": 35,
+        "originiumCost": 5,
+        "damageBonus": 40,
+        "rangeBonus": 20,
+        "speedBonus": 10,
+        "specialEffect": "heal_cleanse_enhanced",
+        "specialEffectDescription": "治疗量 +40%，治疗范围扩大"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "铁丝网墙",
+    "towerType": "BarbedWire",
+    "baseDamage": 8,
+    "attackRange": 40,
+    "attackSpeed": 0.8,
+    "maxDurability": 120,
+    "upgradeLevels": [
+      {
+        "level": 1,
+        "woodCost": 0,
+        "ironCost": 0,
+        "originiumCost": 0,
+        "damageBonus": 0,
+        "rangeBonus": 0,
+        "speedBonus": 0,
+        "specialEffect": "slow_50",
+        "specialEffectDescription": "经过的敌人减速 50%"
+      },
+      {
+        "level": 2,
+        "woodCost": 15,
+        "ironCost": 8,
+        "originiumCost": 0,
+        "damageBonus": 30,
+        "rangeBonus": 0,
+        "speedBonus": 10,
+        "specialEffect": "slow_55",
+        "specialEffectDescription": "伤害 +30%，减速 55%"
+      },
+      {
+        "level": 3,
+        "woodCost": 30,
+        "ironCost": 20,
+        "originiumCost": 2,
+        "damageBonus": 30,
+        "rangeBonus": 0,
+        "speedBonus": 10,
+        "specialEffect": "slow_damage",
+        "specialEffectDescription": "伤害 +30%，减速 60%"
+      },
+      {
+        "level": 4,
+        "woodCost": 50,
+        "ironCost": 35,
+        "originiumCost": 5,
+        "damageBonus": 40,
+        "rangeBonus": 0,
+        "speedBonus": 10,
+        "specialEffect": "slow_damage_enhanced",
+        "specialEffectDescription": "伤害 +40%，减速 65%"
+      }
+    ]
   }
 ]

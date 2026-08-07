@@ -28,6 +28,7 @@ SettingsManager="*res://Scripts/Managers/SettingsManager.cs"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 BuffManager="*res://Scripts/Managers/BuffManager.cs"
 DailyStatsManager="*res://Scripts/Managers/DailyStatsManager.cs"
+AudioManager="*res://Scripts/Managers/AudioManager.cs"
 
 [display]
 

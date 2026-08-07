@@ -29,6 +29,7 @@ public partial class DataManager : Node
 
     private readonly Dictionary<int, OperatorData> _operatorDict = new();
     private readonly Dictionary<int, CollectionData> _collectionDict = new();
+    private readonly Dictionary<int, BlueprintData> _blueprintDict = new();
     private readonly Dictionary<int, TowerData> _towerDict = new();
     private readonly Dictionary<int, EnemyWaveData> _waveDict = new();
     private readonly Dictionary<int, ItemData> _itemDict = new();
@@ -41,6 +42,7 @@ public partial class DataManager : Node
 
     public IReadOnlyDictionary<int, OperatorData> Operators => _operatorDict;
     public IReadOnlyDictionary<int, CollectionData> Collections => _collectionDict;
+    public IReadOnlyDictionary<int, BlueprintData> Blueprints => _blueprintDict;
     public IReadOnlyDictionary<int, TowerData> Towers => _towerDict;
     public IReadOnlyDictionary<int, EnemyWaveData> Waves => _waveDict;
     public IReadOnlyDictionary<int, ItemData> Items => _itemDict;
@@ -99,6 +101,10 @@ public partial class DataManager : Node
             {
                 foreach (var item in items) _collectionDict[item.Id] = item;
             }),
+            LoadDataAsync<BlueprintData>("res://Data/BlueprintData.json", items =>
+            {
+                foreach (var item in items) _blueprintDict[item.Id] = item;
+            }),
             LoadDataAsync<TowerData>("res://Data/TowerData.json", items =>
             {
                 foreach (var item in items) _towerDict[item.Id] = item;
@@ -124,7 +130,7 @@ public partial class DataManager : Node
         await Task.WhenAll(tasks);
 
         _isLoaded = true;
-        GD.Print($"[DataManager] 加载完成 — 干员:{_operatorDict.Count}, 藏品:{_collectionDict.Count}, 塔:{_towerDict.Count}, 波次:{_waveDict.Count}, 物品:{_itemDict.Count}, 技能:{_skillDict.Count}, 天赋:{_talentDict.Count}");
+        GD.Print($"[DataManager] 加载完成 — 干员:{_operatorDict.Count}, 藏品:{_collectionDict.Count}, 图纸:{_blueprintDict.Count}, 塔:{_towerDict.Count}, 波次:{_waveDict.Count}, 物品:{_itemDict.Count}, 技能:{_skillDict.Count}, 天赋:{_talentDict.Count}");
 
         // 广播加载完成
         EventBus.Instance.EmitLogMessage("DataManager 加载完成", "INFO");
@@ -189,6 +195,12 @@ public partial class DataManager : Node
         return _collectionDict.GetValueOrDefault(id);
     }
 
+    /// <summary>获取图纸数据</summary>
+    public BlueprintData GetBlueprint(int id)
+    {
+        return _blueprintDict.GetValueOrDefault(id);
+    }
+
     /// <summary>获取防御塔数据</summary>
     public TowerData GetTower(int id)
     {
@@ -240,5 +252,11 @@ public partial class DataManager : Node
     public List<int> GetAllCollectionIds()
     {
         return new List<int>(_collectionDict.Keys);
+    }
+
+    /// <summary>获取所有图纸 ID 列表</summary>
+    public List<int> GetAllBlueprintIds()
+    {
+        return new List<int>(_blueprintDict.Keys);
     }
 }

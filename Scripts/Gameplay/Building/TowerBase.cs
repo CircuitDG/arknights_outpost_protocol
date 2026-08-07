@@ -42,8 +42,8 @@ public partial class TowerBase : Node2D
     private TowerData _data;
     private int _currentDurability;
     private float _attackTimer;
-    private readonly List<BaseEntity> _targetsInRange = new();
-    private BaseEntity _currentTarget;
+    protected readonly List<BaseEntity> _targetsInRange = new();
+    protected BaseEntity _currentTarget;
     private bool _isBuilt;
 
     // ============================================================
@@ -289,7 +289,7 @@ public partial class TowerBase : Node2D
 
     private void OnBodyEntered(Node body)
     {
-        if (body is BaseEntity entity && entity.Faction == FactionType.Enemy && !entity.IsDead)
+        if (body is BaseEntity entity && AcceptsEntity(entity))
         {
             if (!_targetsInRange.Contains(entity))
             {
@@ -319,7 +319,7 @@ public partial class TowerBase : Node2D
         foreach (var entity in _targetsInRange)
         {
             if (entity == null || entity.IsDead) continue;
-            if (entity.Faction != FactionType.Enemy) continue;
+            if (!AcceptsEntity(entity)) continue;
 
             float dist = GlobalPosition.DistanceTo(entity.GlobalPosition);
             if (dist < minDist && dist <= CurrentRange)
@@ -336,8 +336,14 @@ public partial class TowerBase : Node2D
     {
         if (target == null) return false;
         if (target.IsDead) return false;
-        if (target.Faction != FactionType.Enemy) return false;
+        if (!AcceptsEntity(target)) return false;
         return IsInRange(target);
+    }
+
+    /// <summary>目标筛选（默认敌人；医疗塔等可重写为友军）</summary>
+    protected virtual bool AcceptsEntity(BaseEntity entity)
+    {
+        return entity != null && entity.Faction == FactionType.Enemy && !entity.IsDead;
     }
 
     private bool IsInRange(BaseEntity target)
@@ -346,7 +352,7 @@ public partial class TowerBase : Node2D
         return GlobalPosition.DistanceTo(target.GlobalPosition) <= CurrentRange;
     }
 
-    private void ExecuteAttack()
+    protected virtual void ExecuteAttack()
     {
         if (_currentTarget == null || !IsTargetValid(_currentTarget)) return;
 
@@ -362,6 +368,7 @@ public partial class TowerBase : Node2D
         // 攻击表现：弹道 + 脉冲
         AttackEffects.SpawnTracer(this, _currentTarget, new Color(1f, 0.82f, 0.38f));
         AttackEffects.Pulse(this, 1f, 1.12f);
+        OutpostProtocol.Managers.AudioManager.Instance?.Play("shoot", -16f);
 
         // 创建弹道效果
         SpawnProjectile(_currentTarget.GlobalPosition);

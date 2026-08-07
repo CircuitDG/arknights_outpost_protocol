@@ -174,6 +174,7 @@ public partial class EnemySpawner : Node
         _isSpawning = true;
 
         GD.Print($"[EnemySpawner] 波次 {effectiveWave} 开始 — 总计 {_totalEnemiesInWave} 个敌人");
+        OutpostProtocol.Managers.AudioManager.Instance?.Play("wave_start");
 
         // 广播波次开始
         EventBus.Instance.EmitWaveStarted(effectiveWave);
@@ -211,6 +212,60 @@ public partial class EnemySpawner : Node
             ResourceReward = 2 + waveLevel / 2,
         };
         for (int i = 0; i < normal.Count; i++) _pendingSpawns.Add(normal);
+
+        // 随等级加入更多敌人类型
+        if (waveLevel >= 3)
+        {
+            var dual = new EnemySpawnConfig
+            {
+                EnemyId = 4,
+                Count = 2 + waveLevel / 2,
+                SpawnInterval = 1.6f,
+                SpawnPoint = "Edge",
+                ExpReward = 20 + waveLevel,
+                ResourceReward = 7 + waveLevel / 2,
+            };
+            for (int i = 0; i < dual.Count; i++) _pendingSpawns.Add(dual);
+        }
+        if (waveLevel >= 4)
+        {
+            var shield = new EnemySpawnConfig
+            {
+                EnemyId = 3,
+                Count = 2 + waveLevel / 3,
+                SpawnInterval = 2.2f,
+                SpawnPoint = "Edge",
+                ExpReward = 22 + waveLevel,
+                ResourceReward = 8 + waveLevel / 2,
+            };
+            for (int i = 0; i < shield.Count; i++) _pendingSpawns.Add(shield);
+        }
+        if (waveLevel >= 5)
+        {
+            var artillery = new EnemySpawnConfig
+            {
+                EnemyId = 5,
+                Count = 2 + waveLevel / 4,
+                SpawnInterval = 3.0f,
+                SpawnPoint = "Edge",
+                ExpReward = 30 + waveLevel * 2,
+                ResourceReward = 9 + waveLevel / 2,
+            };
+            for (int i = 0; i < artillery.Count; i++) _pendingSpawns.Add(artillery);
+        }
+        if (waveLevel >= 6)
+        {
+            var heavy = new EnemySpawnConfig
+            {
+                EnemyId = 6,
+                Count = 1 + waveLevel / 6,
+                SpawnInterval = 3.5f,
+                SpawnPoint = "Edge",
+                ExpReward = 45 + waveLevel * 2,
+                ResourceReward = 12 + waveLevel,
+            };
+            for (int i = 0; i < heavy.Count; i++) _pendingSpawns.Add(heavy);
+        }
 
         if (eliteCount > 0)
         {

@@ -208,6 +208,7 @@ public partial class AttackComponent : Node
         {
             AttackEffects.SpawnTracer(ownerNode, targetNode, new Color(1f, 0.88f, 0.5f));
             AttackEffects.Pulse(ownerNode, 1f, 1.08f);
+            OutpostProtocol.Managers.AudioManager.Instance?.Play("shoot", -16f);
         }
         AttackExecuted?.Invoke(target, damage);
 

@@ -44,8 +44,8 @@ public partial class HUDController : Node
 
     // 建设期防御塔选择
     private Control _buildPanel;
-    private readonly Button[] _towerButtons = new Button[3];
-    private readonly System.Action[] _towerButtonHandlers = new System.Action[3];
+    private readonly Button[] _towerButtons = new Button[5];
+    private readonly System.Action[] _towerButtonHandlers = new System.Action[5];
     private int _selectedTowerIndex = -1;
 
     // 地图
@@ -135,7 +135,7 @@ public partial class HUDController : Node
         _collectionButton = GetNodeOrNull<Button>("../Root/CollectionButton");
         _collectionPanel = GetNodeOrNull<CollectionPanel>("../Root/CollectionPanel");
         _buildPanel = GetNodeOrNull<Control>("../Root/BuildPanel");
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < _towerButtons.Length; i++)
         {
             _towerButtons[i] = GetNodeOrNull<Button>($"../Root/BuildPanel/BuildVBox/TowerButton_{i + 1}");
         }
@@ -246,6 +246,7 @@ public partial class HUDController : Node
             InputLock.SetLocked(_settingsPanel != null && _settingsPanel.Visible);
             RefreshOperatorCards();
             RefreshHotbar();
+            RefreshTowerButtons();
             UpdateNightFog();
             if (_tooltipPanel != null && _tooltipPanel.Visible && _hoveredCard != null)
             {
@@ -546,6 +547,7 @@ public partial class HUDController : Node
 
     private void ToggleInventory()
     {
+        AudioManager.Instance?.Play("ui_click");
         if (_inventoryPanel == null) return;
         _inventoryPanel.SetOpen(!_inventoryPanel.Visible, _backpack);
     }
@@ -605,6 +607,7 @@ public partial class HUDController : Node
 
     private void ToggleSettings()
     {
+        AudioManager.Instance?.Play("ui_click");
         if (_settingsPanel != null)
         {
             _settingsPanel.Visible = !_settingsPanel.Visible;
@@ -613,6 +616,7 @@ public partial class HUDController : Node
 
     private void ToggleCollection()
     {
+        AudioManager.Instance?.Play("ui_click");
         if (_collectionPanel == null) return;
         if (_collectionPanel.Visible)
         {
@@ -635,6 +639,7 @@ public partial class HUDController : Node
 
     private void ToggleHelp()
     {
+        AudioManager.Instance?.Play("ui_click");
         if (_helpPanel != null)
         {
             _helpPanel.Visible = !_helpPanel.Visible;
@@ -657,6 +662,17 @@ public partial class HUDController : Node
     private void OnTowerButtonPressed(int index)
     {
         if (_towerBuilder == null) return;
+        AudioManager.Instance?.Play("ui_click");
+
+        // 图纸锁定检查（HUD 层也拦截，避免点击无反馈）
+        if (_towerBuilder.RequiredBlueprintIds != null &&
+            index < _towerBuilder.RequiredBlueprintIds.Length &&
+            !OutpostProtocol.Managers.BlueprintManager.Has(_towerBuilder.RequiredBlueprintIds[index]))
+        {
+            GD.Print("[HUD] 该防御塔需要图纸解锁");
+            return;
+        }
+
         _selectedTowerIndex = index;
         RefreshTowerButtons();
         _towerBuilder.StartBuildMode(index);
@@ -664,12 +680,20 @@ public partial class HUDController : Node
 
     private void RefreshTowerButtons()
     {
+        var names = new[] { "弩炮台", "减速凝胶塔", "源石爆裂塔", "医疗无人机平台", "铁丝网墙" };
         for (int i = 0; i < _towerButtons.Length; i++)
         {
             if (_towerButtons[i] == null) continue;
-            _towerButtons[i].Modulate = i == _selectedTowerIndex
+            bool locked = _towerBuilder?.RequiredBlueprintIds != null &&
+                          i < _towerBuilder.RequiredBlueprintIds.Length &&
+                          !OutpostProtocol.Managers.BlueprintManager.Has(_towerBuilder.RequiredBlueprintIds[i]);
+            _towerButtons[i].Disabled = locked;
+            _towerButtons[i].Modulate = locked ? new Color(0.55f, 0.5f, 0.42f)
+                : i == _selectedTowerIndex
                 ? new Color(1f, 0.85f, 0.4f)
                 : Colors.White;
+            string baseName = i < names.Length ? names[i] : $"塔{i + 1}";
+            _towerButtons[i].Text = locked ? $"{baseName} 🔒" : baseName;
         }
     }
 

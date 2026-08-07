@@ -69,6 +69,7 @@ public static class CollectionManager
 
         EventBus.Instance.EmitCollectionAcquired(collectionId);
         EventBus.Instance.EmitLogMessage($"获得藏品: {data.Name}（{GetRarityText(data.Rarity)}）", "INFO");
+        AudioManager.Instance?.Play("collection");
         GD.Print($"[Collection] 获得藏品: {data.Name} | {data.Description}");
         return true;
     }
