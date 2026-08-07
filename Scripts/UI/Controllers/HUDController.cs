@@ -1,4 +1,5 @@
 using Godot;
+using OutpostProtocol.Core;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Character.Doctor;
@@ -214,6 +215,7 @@ public partial class HUDController : Node
         }
 
         HideTooltip();
+        InputLock.SetLocked(false);
     }
 
     public override void _Process(double delta)
@@ -233,6 +235,7 @@ public partial class HUDController : Node
         if (_uiRefreshTimer >= 0.15f)
         {
             _uiRefreshTimer = 0;
+            InputLock.SetLocked(_settingsPanel != null && _settingsPanel.Visible);
             RefreshOperatorCards();
             RefreshHotbar();
             UpdateNightFog();
@@ -758,34 +761,24 @@ public partial class HUDController : Node
                 GetViewport().SetInputAsHandled();
                 return;
             }
-        }
-
-        // 建设期：数字键 1/2/3 选择防御塔
-        if (GameManager.Instance?.CurrentState == GameState.Build && _towerBuilder != null)
-        {
-            if (@event is InputEventKey buildKey && buildKey.Pressed)
+            if (keyEvt.Keycode == Key.Escape)
             {
-                switch (buildKey.Keycode)
+                // 建设模式中先退出建造；否则打开/关闭设置
+                if (_towerBuilder != null && _towerBuilder.IsBuildingMode)
                 {
-                    case Key.Key1:
-                        OnTowerButtonPressed(0);
-                        GetViewport().SetInputAsHandled();
-                        return;
-                    case Key.Key2:
-                        OnTowerButtonPressed(1);
-                        GetViewport().SetInputAsHandled();
-                        return;
-                    case Key.Key3:
-                        OnTowerButtonPressed(2);
-                        GetViewport().SetInputAsHandled();
-                        return;
-                    case Key.Escape:
-                        _towerBuilder.ExitBuildMode();
-                        GetViewport().SetInputAsHandled();
-                        return;
+                    _towerBuilder.ExitBuildMode();
                 }
+                else if (_helpPanel != null && _helpPanel.Visible)
+                {
+                    _helpPanel.Visible = false;
+                }
+                else
+                {
+                    ToggleSettings();
+                }
+                GetViewport().SetInputAsHandled();
+                return;
             }
-            return;
         }
 
         // 非建设期：数字键选择物品栏

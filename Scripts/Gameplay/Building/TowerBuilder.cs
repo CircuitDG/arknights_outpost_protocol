@@ -283,7 +283,7 @@ public partial class TowerBuilder : Node
 
     public override void _Input(InputEvent @event)
     {
-        if (!_isBuildingMode) return;
+        if (!_isBuildingMode || OutpostProtocol.Core.InputLock.IsLocked) return;
 
         if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed)
         {

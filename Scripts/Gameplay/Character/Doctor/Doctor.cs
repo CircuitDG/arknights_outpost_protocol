@@ -1,4 +1,5 @@
 using Godot;
+using OutpostProtocol.Core;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Core.Grid;
 using OutpostProtocol.Gameplay.Character.Operator;
@@ -135,7 +136,7 @@ public partial class Doctor : CharacterBody2D
 
     public override void _PhysicsProcess(double delta)
     {
-        if (_isDead) return;
+        if (_isDead || InputLock.IsLocked) return;
 
         // 1. 处理输入
         HandleInput();
@@ -176,7 +177,7 @@ public partial class Doctor : CharacterBody2D
 
     public override void _Input(InputEvent @event)
     {
-        if (_isDead) return;
+        if (_isDead || InputLock.IsLocked) return;
 
         if (@event is InputEventMouseButton mouseEvent && mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Right)
         {
@@ -630,8 +631,13 @@ public partial class Doctor : CharacterBody2D
             }
         }
 
-        // 点击空地：清空选择
+        // 点击空地：有选中干员时直接指挥移动；否则清空选择
         if (_selectedOperators.Count > 0)
+        {
+            CommandMoveTo(worldPos);
+            GD.Print($"[Doctor] 点击地面移动选中干员 → ({worldPos.X:F0}, {worldPos.Y:F0})");
+        }
+        else if (_selectedOperator != null)
         {
             SelectOperators(new List<OutpostProtocol.Gameplay.Character.Operator.Operator>());
         }

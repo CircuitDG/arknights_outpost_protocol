@@ -16,6 +16,7 @@ public partial class ChunkLoader : Node
     [Export] public int ChunkSize = 16; // 每块格子数
     [Export] public int LoadRadius = 2; // 加载半径（块数），实际 (2R+1)² 块
     [Export] public bool AutoUnload = false; // 是否自动卸载远离的块（默认保留）
+    [Export] public int ChunksPerFrame = 20; // 每帧全图加载的块数（避免卡顿）
 
     [ExportGroup("跟随目标")]
     [Export] public Node2D FollowTarget; // 如博士
@@ -27,6 +28,8 @@ public partial class ChunkLoader : Node
     private Func<Vector2I, bool> _isResourceCollected;
     private readonly Dictionary<Vector2I, Node2D> _loadedChunks = new();
     private Vector2I _lastCenterChunk = new(int.MinValue, int.MinValue);
+    private readonly Queue<Vector2I> _pendingChunks = new();
+    private bool _allLoaded;
 
     public int ActiveChunkCount => _loadedChunks.Count;
     public Vector2I CenterChunk => _lastCenterChunk;
@@ -46,11 +49,74 @@ public partial class ChunkLoader : Node
     {
         if (FollowTarget == null || _mapData == null || _tileSet == null || _chunkContainer == null) return;
 
+        // 全图常驻加载：先生成待加载队列（按视野中心由近到远），逐帧加载
+        if (!_allLoaded && _pendingChunks.Count == 0)
+        {
+            BuildPendingChunks();
+        }
+
+        if (!_allLoaded)
+        {
+            int loadedThisFrame = 0;
+            while (_pendingChunks.Count > 0 && loadedThisFrame < ChunksPerFrame)
+            {
+                var chunkPos = _pendingChunks.Dequeue();
+                if (!_loadedChunks.ContainsKey(chunkPos))
+                {
+                    LoadChunk(chunkPos);
+                    loadedThisFrame++;
+                }
+            }
+            if (_pendingChunks.Count == 0)
+            {
+                _allLoaded = true;
+                GD.Print($"[ChunkLoader] 全地图加载完成，共 {_loadedChunks.Count} 块");
+            }
+        }
+
+        // 保留角色周围即时加载（首帧快速铺开视野）
         Vector2I centerChunk = WorldToChunk(FollowTarget.GlobalPosition);
         if (centerChunk == _lastCenterChunk) return;
 
         _lastCenterChunk = centerChunk;
         UpdateChunks(centerChunk);
+    }
+
+    private void BuildPendingChunks()
+    {
+        _pendingChunks.Clear();
+        if (_mapData == null) return;
+
+        int chunksX = (_mapData.Width + ChunkSize - 1) / ChunkSize;
+        int chunksY = (_mapData.Height + ChunkSize - 1) / ChunkSize;
+
+        // 按视野中心（相机）距离排序，保证视野先加载
+        Vector2 cameraWorld = FollowTarget?.GlobalPosition ?? Vector2.Zero;
+        var camera = GetViewport().GetCamera2D();
+        if (camera != null) cameraWorld = camera.GlobalPosition;
+
+        var all = new List<Vector2I>();
+        for (int cx = 0; cx < chunksX; cx++)
+        {
+            for (int cy = 0; cy < chunksY; cy++)
+            {
+                all.Add(new Vector2I(cx, cy));
+            }
+        }
+
+        all.Sort((a, b) =>
+        {
+            Vector2 aPos = new((a.X + 0.5f) * ChunkSize * 16f, (a.Y + 0.5f) * ChunkSize * 16f);
+            Vector2 bPos = new((b.X + 0.5f) * ChunkSize * 16f, (b.Y + 0.5f) * ChunkSize * 16f);
+            return aPos.DistanceSquaredTo(cameraWorld).CompareTo(bPos.DistanceSquaredTo(cameraWorld));
+        });
+
+        foreach (var pos in all)
+        {
+            _pendingChunks.Enqueue(pos);
+        }
+
+        GD.Print($"[ChunkLoader] 全图加载队列: {all.Count} 块");
     }
 
     // ============================================================
@@ -76,21 +142,7 @@ public partial class ChunkLoader : Node
             }
         }
 
-        if (AutoUnload)
-        {
-            var toRemove = new List<Vector2I>();
-            foreach (var kvp in _loadedChunks)
-            {
-                if (!neededChunks.Contains(kvp.Key))
-                {
-                    toRemove.Add(kvp.Key);
-                }
-            }
-            foreach (var key in toRemove)
-            {
-                UnloadChunk(key);
-            }
-        }
+        // 全图常驻：不再卸载任何块（AutoUnload 忽略）
     }
 
     private void LoadChunk(Vector2I chunkPos)
@@ -200,5 +252,7 @@ public partial class ChunkLoader : Node
         }
         _loadedChunks.Clear();
         _lastCenterChunk = new Vector2I(int.MinValue, int.MinValue); // 下一帧按当前中心重新加载
+        _allLoaded = false;
+        _pendingChunks.Clear();
     }
 }

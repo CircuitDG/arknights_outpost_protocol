@@ -1,4 +1,5 @@
 using Godot;
+using OutpostProtocol.Gameplay.Character.Doctor;
 using System.Collections.Generic;
 
 namespace OutpostProtocol.UI.Views;
@@ -10,6 +11,8 @@ public partial class WorldMapView : Control
     private Vector2 _panOffset;
     private bool _dragging;
     private Vector2 _lastMouse;
+    private Vector2 _pressScreen;
+    private bool _isPressed;
     private List<MapMarker> _markers = new();
     private float _refreshTimer;
 
@@ -66,12 +69,24 @@ public partial class WorldMapView : Control
             {
                 _dragging = true;
                 _lastMouse = GetViewport().GetMousePosition();
+                _pressScreen = _lastMouse;
+                _isPressed = true;
+                AcceptEvent();
+            }
+            else if (mb.ButtonIndex == MouseButton.Right)
+            {
+                HandleRightClick(GetViewport().GetMousePosition());
                 AcceptEvent();
             }
         }
         else if (@event is InputEventMouseButton mbUp && !mbUp.Pressed && mbUp.ButtonIndex == MouseButton.Left)
         {
             _dragging = false;
+            if (_isPressed && _pressScreen.DistanceTo(GetViewport().GetMousePosition()) < 8f)
+            {
+                HandleLeftClick(GetViewport().GetMousePosition());
+            }
+            _isPressed = false;
             AcceptEvent();
         }
         else if (@event is InputEventMouseMotion mm && _dragging)
@@ -92,6 +107,47 @@ public partial class WorldMapView : Control
         _panOffset = worldAtMouse - (screenPos - center) / newZoom;
         _zoom = newZoom;
         QueueRedraw();
+    }
+
+    private void HandleLeftClick(Vector2 screenPos)
+    {
+        Vector2 worldPos = ScreenToWorld(screenPos);
+        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Doctor;
+        if (doctor == null) return;
+
+        OutpostProtocol.Gameplay.Character.Operator.Operator nearest = null;
+        float minDist = 30f;
+        foreach (var node in GetTree().GetNodesInGroup("operators"))
+        {
+            if (node is not OutpostProtocol.Gameplay.Character.Operator.Operator op) continue;
+            float dist = op.GlobalPosition.DistanceTo(worldPos);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                nearest = op;
+            }
+        }
+
+        if (nearest != null)
+        {
+            doctor.SelectOperator(nearest);
+        }
+        else
+        {
+            doctor.SelectOperators(new List<OutpostProtocol.Gameplay.Character.Operator.Operator>());
+        }
+    }
+
+    private void HandleRightClick(Vector2 screenPos)
+    {
+        Vector2 worldPos = ScreenToWorld(screenPos);
+        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Doctor;
+        doctor?.CommandMoveTo(worldPos);
+    }
+
+    private Vector2 ScreenToWorld(Vector2 screenPos)
+    {
+        return (screenPos - Size * 0.5f) / _zoom + _panOffset;
     }
 
     public override void _Draw()
@@ -120,7 +176,7 @@ public partial class WorldMapView : Control
 
         if (font != null)
         {
-            DrawString(font, new Vector2(18, 24), "拖拽移动 · 滚轮缩放 · M / Esc 关闭", HorizontalAlignment.Left, -1, 14, new Color(0.9f, 0.86f, 0.72f));
+            DrawString(font, new Vector2(18, 24), "左键选干员 · 右键移动 · 拖拽平移 · 滚轮缩放 · M/Esc 关闭", HorizontalAlignment.Left, -1, 14, new Color(0.9f, 0.86f, 0.72f));
         }
     }
 }
