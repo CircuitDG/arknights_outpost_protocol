@@ -1,0 +1,493 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/HUDController.cs" id="1_hud"]
+[ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://Assets/UI/cooldown_fill.png" id="3_cooldown"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/InventoryPanel.cs" id="5_inventory"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/MinimapView.cs" id="6_minimap"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/WorldMapView.cs" id="7_worldmap"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/NightFogLayer.cs" id="8_fog"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/CollectionPanel.cs" id="9_collection"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp"]
+bg_color = Color(0.42, 0.58, 0.32, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.78, 0.45, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stamina"]
+bg_color = Color(0.72, 0.48, 0.16, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.92, 0.68, 0.32, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_phase"]
+bg_color = Color(0.3, 0.42, 0.58, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45, 0.62, 0.8, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_core"]
+bg_color = Color(0.62, 0.22, 0.16, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.4, 0.3, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hotbar"]
+bg_color = Color(0.12, 0.1, 0.08, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.3, 0.19, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hotbar_selected"]
+bg_color = Color(0.22, 0.18, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.78, 0.35, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
+bg_color = Color(0.1, 0.08, 0.06, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.56, 0.32, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="HUD" type="CanvasLayer"]
+
+[node name="FogLayer" type="CanvasLayer" parent="."]
+layer = 1
+script = ExtResource("8_fog")
+
+[node name="FogRect" type="ColorRect" parent="FogLayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 1)
+mouse_filter = 2
+
+[node name="FogLights" type="Node2D" parent="FogLayer"]
+
+[node name="Root" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="TopLeftPanel" type="Panel" parent="Root"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 244.0
+offset_bottom = 172.0
+mouse_filter = 2
+
+[node name="TopLeftVBox" type="VBoxContainer" parent="Root"]
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 236.0
+offset_bottom = 166.0
+theme_override_constants/separation = 3
+
+[node name="StatusTitle" type="Label" parent="Root/TopLeftVBox"]
+text = "◆ 生存状态"
+theme_type_variation = &"PZPanelTitle"
+theme_override_font_sizes/font_size = 15
+
+[node name="HPLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "生命 100/100"
+theme_override_colors/font_color = Color(0.82, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="HPBar" type="ProgressBar" parent="Root/TopLeftVBox"]
+custom_minimum_size = Vector2(170, 9)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp")
+
+[node name="StaminaLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "体力 100/100"
+theme_override_colors/font_color = Color(0.96, 0.8, 0.55, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="StaminaBar" type="ProgressBar" parent="Root/TopLeftVBox"]
+custom_minimum_size = Vector2(170, 9)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_stamina")
+
+[node name="ResourceLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "木材 ×0  铁皮 ×0  源石 ×0"
+theme_override_colors/font_color = Color(0.9, 0.84, 0.66, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="CoreHealthLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "核心: 100/100"
+theme_override_font_sizes/font_size = 12
+
+[node name="CoreHealthBar" type="ProgressBar" parent="Root/TopLeftVBox"]
+custom_minimum_size = Vector2(170, 9)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_core")
+
+[node name="CoreStatusLabel" type="Label" parent="Root/TopLeftVBox"]
+text = "◆ 运转中"
+theme_override_colors/font_color = Color(0.62, 0.82, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="CenterTopPanel" type="Panel" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -390.0
+offset_top = 8.0
+offset_right = 390.0
+offset_bottom = 50.0
+mouse_filter = 2
+
+[node name="CenterTopHBox" type="HBoxContainer" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -382.0
+offset_top = 13.0
+offset_right = 382.0
+offset_bottom = 45.0
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="DayLabel" type="Label" parent="Root/CenterTopHBox"]
+text = "Day 1"
+theme_override_colors/font_color = Color(0.94, 0.88, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+size_flags_vertical = 4
+vertical_alignment = 1
+
+[node name="PhaseLabel" type="Label" parent="Root/CenterTopHBox"]
+text = "探索期"
+theme_override_colors/font_color = Color(0.86, 0.82, 0.7, 1)
+theme_override_font_sizes/font_size = 13
+size_flags_vertical = 4
+vertical_alignment = 1
+
+[node name="WaveLabel" type="Label" parent="Root/CenterTopHBox"]
+text = "波次: --"
+theme_override_colors/font_color = Color(0.9, 0.78, 0.52, 1)
+theme_override_font_sizes/font_size = 13
+size_flags_vertical = 4
+vertical_alignment = 1
+
+[node name="PhaseTimeLabel" type="Label" parent="Root/CenterTopHBox"]
+text = "07:00 / 12:00"
+theme_override_colors/font_color = Color(0.78, 0.86, 0.94, 1)
+theme_override_font_sizes/font_size = 12
+size_flags_vertical = 4
+vertical_alignment = 1
+
+[node name="PhaseBar" type="ProgressBar" parent="Root/CenterTopHBox"]
+custom_minimum_size = Vector2(130, 8)
+max_value = 100.0
+show_percentage = false
+size_flags_vertical = 4
+theme_override_styles/fill = SubResource("StyleBoxFlat_phase")
+
+[node name="HotbarContainer" type="HBoxContainer" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -258.0
+offset_top = -54.0
+offset_right = 258.0
+offset_bottom = -10.0
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="BackpackButton" type="Button" parent="Root/HotbarContainer"]
+custom_minimum_size = Vector2(52, 38)
+text = "🎒"
+
+[node name="SettingsToggleButton" type="Button" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_top = 66.0
+offset_right = -10.0
+offset_bottom = 96.0
+text = "⚙ 设置"
+
+[node name="CollectionButton" type="Button" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -242.0
+offset_top = 66.0
+offset_right = -132.0
+offset_bottom = 96.0
+text = "📖 藏品"
+
+[node name="OperatorColumnPanel" type="Panel" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -198.0
+offset_top = 126.0
+offset_right = -10.0
+offset_bottom = -70.0
+mouse_filter = 2
+
+[node name="OperatorCardsScroll" type="ScrollContainer" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -190.0
+offset_top = 132.0
+offset_right = -18.0
+offset_bottom = -78.0
+horizontal_scroll_mode = 0
+
+[node name="OperatorCardContainer" type="VBoxContainer" parent="Root/OperatorCardsScroll"]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="TooltipPanel" type="PanelContainer" parent="Root"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 320.0
+offset_bottom = 0.0
+custom_minimum_size = Vector2(320, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_tooltip")
+mouse_filter = 2
+visible = false
+
+[node name="TooltipVBox" type="VBoxContainer" parent="Root/TooltipPanel"]
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -10.0
+theme_override_constants/separation = 5
+
+[node name="TooltipTitle" type="Label" parent="Root/TooltipPanel/TooltipVBox"]
+theme_override_colors/font_color = Color(0.98, 0.88, 0.62, 1)
+theme_override_font_sizes/font_size = 16
+text = ""
+
+[node name="TooltipSeparator1" type="HSeparator" parent="Root/TooltipPanel/TooltipVBox"]
+
+[node name="TooltipGrid" type="GridContainer" parent="Root/TooltipPanel/TooltipVBox"]
+columns = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 3
+
+[node name="TooltipHPLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox/TooltipGrid"]
+theme_override_font_sizes/font_size = 13
+text = "生命 --/--"
+
+[node name="TooltipATKLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox/TooltipGrid"]
+theme_override_font_sizes/font_size = 13
+text = "攻击 --"
+
+[node name="TooltipDEFLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox/TooltipGrid"]
+theme_override_font_sizes/font_size = 13
+text = "防御 --"
+
+[node name="TooltipMoraleLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox/TooltipGrid"]
+theme_override_font_sizes/font_size = 13
+text = "心情 --/100"
+
+[node name="TooltipStateLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox"]
+theme_override_font_sizes/font_size = 13
+text = "状态: --"
+
+[node name="TooltipSeparator2" type="HSeparator" parent="Root/TooltipPanel/TooltipVBox"]
+
+[node name="TooltipSkillLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox"]
+theme_override_colors/font_color = Color(0.92, 0.8, 0.56, 1)
+theme_override_font_sizes/font_size = 13
+text = "技能: --"
+
+[node name="TooltipDescLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox"]
+custom_minimum_size = Vector2(292, 0)
+theme_override_colors/font_color = Color(0.82, 0.78, 0.68, 1)
+theme_override_font_sizes/font_size = 12
+text = ""
+autowrap_mode = 2
+
+[node name="TooltipReadyLabel" type="Label" parent="Root/TooltipPanel/TooltipVBox"]
+theme_override_font_sizes/font_size = 13
+text = ""
+
+[node name="InventoryPanel" type="Control" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("5_inventory")
+visible = false
+
+[node name="CollectionPanel" type="Control" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("9_collection")
+visible = false
+
+[node name="MinimapView" type="Control" parent="Root"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -95.0
+offset_right = 190.0
+offset_bottom = 95.0
+script = ExtResource("6_minimap")
+
+[node name="BuildPanel" type="Panel" parent="Root"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -212.0
+offset_right = 212.0
+offset_bottom = -10.0
+visible = false
+
+[node name="BuildVBox" type="VBoxContainer" parent="Root/BuildPanel"]
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+theme_override_constants/separation = 6
+
+[node name="BuildTitle" type="Label" parent="Root/BuildPanel/BuildVBox"]
+text = "🏗 防御塔"
+theme_type_variation = &"PZPanelTitle"
+theme_override_font_sizes/font_size = 16
+
+[node name="TowerButton_1" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "弩炮台"
+
+[node name="TowerButton_2" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "减速凝胶塔"
+
+[node name="TowerButton_3" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "源石爆裂塔"
+
+[node name="TowerButton_4" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "医疗无人机平台"
+
+[node name="TowerButton_5" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "铁丝网墙"
+
+[node name="HelpPanel" type="Panel" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -220.0
+offset_right = 380.0
+offset_bottom = 220.0
+visible = false
+
+[node name="HelpVBox" type="VBoxContainer" parent="Root/HelpPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = -28.0
+offset_bottom = -24.0
+theme_override_constants/separation = 12
+
+[node name="HelpTitle" type="Label" parent="Root/HelpPanel/HelpVBox"]
+text = "❓ 行动手册"
+theme_type_variation = &"PZPanelTitle"
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+
+[node name="HelpText" type="Label" parent="Root/HelpPanel/HelpVBox"]
+text = "WASD 移动 | Shift 冲刺 | E 交互 | 滚轮 缩放地图
+左键 点击干员选中 → 再点地面移动 | 右键 也可指挥 | F1-F4 释放技能
+左键 拖拽框选干员 | 点击博士 取消选择
+干员战斗不能时靠近按 E 用急救绷带救治（30 秒后自动撤离）
+建设期：点击左下角防御塔选择，地图左键放置，右键取消（纯鼠标操作）
+数字键 1-9 物品栏 | B 背包 | M 全屏地图 | P 藏品图鉴 | T 天赋 | H 帮助 | O 设置
+夜晚视野会缩小，靠近干员和防御塔才能看清路面"
+theme_override_colors/font_color = Color(0.84, 0.78, 0.64, 1)
+theme_override_font_sizes/font_size = 17
+horizontal_alignment = 1
+
+[node name="HelpCloseButton" type="Button" parent="Root/HelpPanel/HelpVBox"]
+custom_minimum_size = Vector2(160, 40)
+text = "关闭"
+size_flags_vertical = 8
+
+[node name="WorldMapView" type="Control" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("7_worldmap")
+
+[node name="PhaseNoticePanel" type="Panel" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -38.0
+offset_right = 340.0
+offset_bottom = 38.0
+mouse_filter = 2
+visible = false
+
+[node name="PhaseNotice" type="Label" parent="Root/PhaseNoticePanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.92, 0.86, 0.7, 1)
+theme_override_font_sizes/font_size = 22
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HUDController" type="Node" parent="."]
+script = ExtResource("1_hud")

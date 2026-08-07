@@ -1,0 +1,224 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/SettingsPanelController.cs" id="1_settings"]
+[ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="2_theme"]
+
+[node name="SettingsPanel" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("2_theme")
+script = ExtResource("1_settings")
+visible = false
+
+[node name="Panel" type="Panel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="MainContainer" type="VBoxContainer" parent="Panel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = 220.0
+
+[node name="Title" type="Label" parent="Panel/MainContainer"]
+text = "⚙️ 设置"
+theme_type_variation = &"PZPanelTitle"
+horizontal_alignment = 1
+
+[node name="MasterLabel" type="Label" parent="Panel/MainContainer"]
+text = "主音量"
+
+[node name="MasterSlider" type="HSlider" parent="Panel/MainContainer"]
+min_value = -30.0
+max_value = 0.0
+step = 1.0
+value = 0.0
+
+[node name="MusicLabel" type="Label" parent="Panel/MainContainer"]
+text = "音乐音量"
+
+[node name="MusicSlider" type="HSlider" parent="Panel/MainContainer"]
+min_value = -30.0
+max_value = 0.0
+step = 1.0
+value = -6.0
+
+[node name="SfxLabel" type="Label" parent="Panel/MainContainer"]
+text = "音效音量"
+
+[node name="SfxSlider" type="HSlider" parent="Panel/MainContainer"]
+min_value = -30.0
+max_value = 0.0
+step = 1.0
+value = -6.0
+
+[node name="HSeparator" type="HSeparator" parent="Panel/MainContainer"]
+
+[node name="KeyScroll" type="ScrollContainer" parent="Panel/MainContainer"]
+custom_minimum_size = Vector2(0, 170)
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="KeyRows" type="VBoxContainer" parent="Panel/MainContainer/KeyScroll"]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="KeyRow_1" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_1"]
+text = "向上"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_1"]
+text = "W"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_1"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_1"]
+text = "清空"
+
+[node name="KeyRow_2" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_2"]
+text = "向下"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_2"]
+text = "S"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_2"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_2"]
+text = "清空"
+
+[node name="KeyRow_3" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_3"]
+text = "向左"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_3"]
+text = "A"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_3"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_3"]
+text = "清空"
+
+[node name="KeyRow_4" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_4"]
+text = "向右"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_4"]
+text = "D"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_4"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_4"]
+text = "清空"
+
+[node name="KeyRow_5" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_5"]
+text = "冲刺"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_5"]
+text = "Shift"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_5"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_5"]
+text = "清空"
+
+[node name="KeyRow_6" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_6"]
+text = "交互"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_6"]
+text = "E"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_6"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_6"]
+text = "清空"
+
+[node name="KeyRow_7" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_7"]
+text = "切换干员"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_7"]
+text = "Tab"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_7"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_7"]
+text = "清空"
+
+[node name="KeyRow_8" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_8"]
+text = "天赋树"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_8"]
+text = "T"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_8"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_8"]
+text = "清空"
+
+[node name="KeyRow_9" type="HBoxContainer" parent="Panel/MainContainer/KeyScroll/KeyRows"]
+
+[node name="ActionLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_9"]
+text = "背包"
+size_flags_horizontal = 3
+
+[node name="KeyLabel" type="Label" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_9"]
+text = "B"
+custom_minimum_size = Vector2(90, 0)
+
+[node name="RebindButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_9"]
+text = "更改"
+
+[node name="ClearButton" type="Button" parent="Panel/MainContainer/KeyScroll/KeyRows/KeyRow_9"]
+text = "清空"
+
+[node name="CaptureLabel" type="Label" parent="Panel/MainContainer"]
+text = ""
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+
+[node name="ResetButton" type="Button" parent="Panel/MainContainer"]
+text = "恢复默认"
+
+[node name="CloseButton" type="Button" parent="Panel/MainContainer"]
+text = "关闭"

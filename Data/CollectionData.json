@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "name": "锈蚀的战术匕首",
+    "rarity": "Common",
+    "category": "Tactical",
+    "description": "近卫/先锋干员攻击力 +8%",
+    "effect": "guard_先锋_attack_up_8",
+    "loreText": "上面刻着一行小字：'给最勇敢的先锋——你的教官。'",
+    "iconPath": "res://Assets/Icons/collection_dagger.png"
+  },
+  {
+    "id": 2,
+    "name": "陈旧的狙击镜",
+    "rarity": "Common",
+    "category": "Tactical",
+    "description": "狙击干员攻击范围 +1格",
+    "effect": "sniper_range_up_1",
+    "loreText": "镜片上有裂痕，但依然清晰。",
+    "iconPath": "res://Assets/Icons/collection_scope.png"
+  },
+  {
+    "id": 3,
+    "name": "压缩饼干",
+    "rarity": "Common",
+    "category": "Survival",
+    "description": "每日食物消耗量 -20%",
+    "effect": "food_consumption_down_20",
+    "loreText": "虽然难吃，但能救命。",
+    "iconPath": "res://Assets/Icons/collection_biscuit.png"
+  },
+  {
+    "id": 101,
+    "name": "源石结晶碎片",
+    "rarity": "Rare",
+    "category": "Tactical",
+    "description": "术师干员技能伤害 +25%",
+    "effect": "caster_skill_damage_up_25",
+    "loreText": "这块碎片似乎来自某座被天灾吞噬的移动城市。",
+    "iconPath": "res://Assets/Icons/collection_crystal.png"
+  },
+  {
+    "id": 102,
+    "name": "战术电台",
+    "rarity": "Rare",
+    "category": "Tactical",
+    "description": "博士指挥半径 +3格",
+    "effect": "doctor_command_range_up_3",
+    "loreText": "罗德岛制式装备，通讯距离有限。",
+    "iconPath": "res://Assets/Icons/collection_radio.png"
+  },
+  {
+    "id": 201,
+    "name": "真银斩剑谱",
+    "rarity": "SuperRare",
+    "category": "Tactical",
+    "description": "近卫干员攻击时有15%概率触发真银斩（范围AOE）",
+    "effect": "guard_silverash_slash_15",
+    "loreText": "银灰先生的独门剑术笔记。",
+    "iconPath": "res://Assets/Icons/collection_sword_manual.png"
+  }
+]

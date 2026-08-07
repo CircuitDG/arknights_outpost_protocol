@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/UI/GameOverPanel.tscn" id="1_panel"]
+[ext_resource type="Script" path="res://Scripts/TestGameOverController.cs" id="2_controller"]
+
+[node name="TestGameOver" type="Node2D"]
+
+[node name="GameOverPanel" parent="." instance=ExtResource("1_panel")]
+
+[node name="TestGameOverController" type="Node" parent="."]
+script = ExtResource("2_controller")

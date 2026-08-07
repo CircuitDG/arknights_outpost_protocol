@@ -1,0 +1,61 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Views/TalentCard.cs" id="1_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.18, 0.14, 0.1, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.33, 0.21, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="TalentCard" type="Control"]
+custom_minimum_size = Vector2(0, 76)
+script = ExtResource("1_card")
+
+[node name="CardPanel" type="Panel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="MainRow" type="HBoxContainer" parent="CardPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 6.0
+offset_right = -8.0
+offset_bottom = -6.0
+
+[node name="IconTexture" type="TextureRect" parent="CardPanel/MainRow"]
+custom_minimum_size = Vector2(48, 48)
+
+[node name="InfoColumn" type="VBoxContainer" parent="CardPanel/MainRow"]
+size_flags_horizontal = 3
+
+[node name="NameLabel" type="Label" parent="CardPanel/MainRow/InfoColumn"]
+text = "天赋名"
+
+[node name="DescriptionLabel" type="Label" parent="CardPanel/MainRow/InfoColumn"]
+text = "描述"
+
+[node name="ProgressBar" type="ProgressBar" parent="CardPanel/MainRow/InfoColumn"]
+custom_minimum_size = Vector2(220, 14)
+
+[node name="ActionColumn" type="VBoxContainer" parent="CardPanel/MainRow"]
+custom_minimum_size = Vector2(110, 0)
+
+[node name="LevelLabel" type="Label" parent="CardPanel/MainRow/ActionColumn"]
+text = "0/3"
+horizontal_alignment = 2
+
+[node name="CostLabel" type="Label" parent="CardPanel/MainRow/ActionColumn"]
+text = "消耗: 1 点"
+horizontal_alignment = 2
+
+[node name="UpgradeButton" type="Button" parent="CardPanel/MainRow/ActionColumn"]
+text = "升级"

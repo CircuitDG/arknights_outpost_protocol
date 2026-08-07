@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Doctor.tscn" id="1_doctor"]
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Operator.tscn" id="2_operator"]
+[ext_resource type="PackedScene" path="res://Scenes/Characters/Enemy.tscn" id="3_enemy"]
+[ext_resource type="Script" path="res://Scripts/TestOperatorController.cs" id="4_controller"]
+
+[node name="TestOperator" type="Node2D"]
+
+[node name="GroundLayer" type="TileMapLayer" parent="."]
+
+[node name="ObstacleLayer" type="TileMapLayer" parent="."]
+
+[node name="Doctor" parent="." instance=ExtResource("1_doctor")]
+position = Vector2(96, 96)
+
+[node name="Operator_1" parent="." instance=ExtResource("2_operator")]
+position = Vector2(24, 24)
+operator_data_id = 1001
+
+[node name="Operator_2" parent="." instance=ExtResource("2_operator")]
+position = Vector2(40, 40)
+OperatorDataId = 1002
+
+[node name="Enemy" parent="." instance=ExtResource("3_enemy")]
+position = Vector2(120, 24)
+
+[node name="TestOperatorController" type="Node" parent="."]
+script = ExtResource("4_controller")

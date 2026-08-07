@@ -1,0 +1,57 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/Controllers/TalentTreeController.cs" id="1_talenttree"]
+[ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="2_theme"]
+
+[node name="TalentTree" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("2_theme")
+script = ExtResource("1_talenttree")
+visible = false
+
+[node name="Panel" type="Panel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+
+[node name="MainContainer" type="VBoxContainer" parent="Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 26.0
+offset_top = 18.0
+offset_right = -26.0
+offset_bottom = -18.0
+theme_override_constants/separation = 8
+
+[node name="TitleRow" type="HBoxContainer" parent="Panel/MainContainer"]
+
+[node name="Title" type="Label" parent="Panel/MainContainer/TitleRow"]
+text = "🌳 天赋树"
+theme_type_variation = &"PZPanelTitle"
+theme_override_font_sizes/font_size = 26
+size_flags_horizontal = 3
+
+[node name="CloseButton" type="Button" parent="Panel/MainContainer/TitleRow"]
+text = "✕ 关闭"
+custom_minimum_size = Vector2(110, 36)
+
+[node name="AvailablePointsLabel" type="Label" parent="Panel/MainContainer"]
+theme_override_font_sizes/font_size = 15
+text = "可用天赋点: 0"
+
+[node name="HintLabel" type="Label" parent="Panel/MainContainer"]
+theme_override_colors/font_color = Color(0.7, 0.66, 0.56, 1)
+theme_override_font_sizes/font_size = 12
+text = "提示：先点亮前置天赋才能解锁后续节点；Esc 关闭"
+
+[node name="HSeparator" type="HSeparator" parent="Panel/MainContainer"]
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel/MainContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BranchContainer" type="VBoxContainer" parent="Panel/MainContainer/ScrollContainer"]
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+theme_override_constants/separation = 10

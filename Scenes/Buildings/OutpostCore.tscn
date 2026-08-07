@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Gameplay/Building/OutpostCore.cs" id="1_core"]
+[ext_resource type="Texture2D" path="res://Assets/Art/Buildings/core_logo_96.png" id="2_icon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_core_bar"]
+bg_color = Color(0.2, 0.2, 0.2, 0.8)
+
+[node name="OutpostCore" type="Node2D"]
+script = ExtResource("1_core")
+
+[node name="CoreSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_icon")
+scale = Vector2(0.7, 0.7)
+modulate = Color(0, 1, 0, 1)
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+offset_left = -40.0
+offset_top = 28.0
+offset_right = 40.0
+offset_bottom = 44.0
+max_value = 100.0
+value = 100.0
+theme_override_styles/background = SubResource("StyleBoxFlat_core_bar")
