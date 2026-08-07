@@ -2,7 +2,9 @@ using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Building;
+using OutpostProtocol.Gameplay.Character.Doctor;
 using OutpostProtocol.Gameplay.Character.Enemy;
+using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.UI.Controllers;
 
 namespace OutpostProtocol.Managers;
@@ -51,6 +53,12 @@ public partial class GameManager : Node
     [ExportGroup("波次难度")]
     [Export] public int WaveLevel { get; set; } = 1;
     [Export] public int WaveLevelPerDay = 1; // 每天增加 1
+
+    [ExportGroup("每日物资")]
+    [Export] public int DailyWood = 5;
+    [Export] public int DailyIron = 3;
+    [Export] public int DailyFood = 2;
+    [Export] public int DailyOriginium = 1;
 
     // ============================================================
     // 运行时状态
@@ -256,6 +264,7 @@ public partial class GameManager : Node
         if (newState == GameState.Explore && _dayCount > 1)
         {
             IncreaseWaveLevel();
+            GrantDailySupplies();
         }
 
         // 更新对应的 DayPhase（方便 UI 显示）
@@ -317,6 +326,22 @@ public partial class GameManager : Node
         WaveLevel += WaveLevelPerDay;
         GD.Print($"[GameManager] 波次难度提升: Level {WaveLevel}");
         EventBus.Instance.EmitLogMessage($"波次难度提升至 Lv.{WaveLevel}", "INFO");
+    }
+
+    /// <summary>每天开始发放物资补给</summary>
+    private void GrantDailySupplies()
+    {
+        var doctor = GetTree().GetFirstNodeInGroup("doctor") as Doctor;
+        var backpack = doctor?.GetNodeOrNull<Backpack>("Backpack");
+        if (backpack == null) return;
+
+        backpack.AddItem(Backpack.WOOD_ITEM_ID, DailyWood);
+        backpack.AddItem(Backpack.IRON_ITEM_ID, DailyIron);
+        backpack.AddItem(3, DailyFood);
+        backpack.AddItem(Backpack.ORIGINIUM_ITEM_ID, DailyOriginium);
+
+        GD.Print($"[GameManager] Day {_dayCount} 物资补给: 木材+{DailyWood} 铁皮+{DailyIron} 食物+{DailyFood} 源石+{DailyOriginium}");
+        EventBus.Instance.EmitLogMessage($"每日物资补给已发放", "INFO");
     }
 
     /// <summary>根据游戏状态更新昼夜阶段显示</summary>

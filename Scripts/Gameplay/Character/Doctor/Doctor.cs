@@ -203,6 +203,20 @@ public partial class Doctor : CharacterBody2D
             return;
         }
 
+        // 滚轮缩放地图（与物品栏滚轮切换不冲突：物品栏改用数字键）
+        if (@event is InputEventMouseButton wheel && wheel.Pressed)
+        {
+            if (wheel.ButtonIndex == MouseButton.WheelUp)
+            {
+                ZoomCamera(1.12f);
+            }
+            else if (wheel.ButtonIndex == MouseButton.WheelDown)
+            {
+                ZoomCamera(0.9f);
+            }
+            return;
+        }
+
         if (@event is InputEventKey keyEvent && keyEvent.Pressed)
         {
             if (keyEvent.IsActionPressed("interact"))
@@ -630,6 +644,16 @@ public partial class Doctor : CharacterBody2D
         var camera = viewport.GetCamera2D();
         if (camera == null) return GlobalPosition;
         return camera.GlobalPosition + (screenPos - viewport.GetVisibleRect().Size * 0.5f) / camera.Zoom;
+    }
+
+    /// <summary>缩放主相机（跟随博士）</summary>
+    private void ZoomCamera(float factor)
+    {
+        var camera = GetNodeOrNull<Camera2D>("Camera2D");
+        if (camera == null) return;
+
+        float newZoom = Mathf.Clamp(camera.Zoom.X * factor, 0.45f, 2.5f);
+        camera.Zoom = new Vector2(newZoom, newZoom);
     }
 
     /// <summary>轮询切换选中干员（Tab）</summary>

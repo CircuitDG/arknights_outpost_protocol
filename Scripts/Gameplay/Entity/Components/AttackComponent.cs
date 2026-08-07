@@ -1,4 +1,5 @@
 using Godot;
+using OutpostProtocol.Gameplay.Effects;
 using System;
 using System.Collections.Generic;
 
@@ -181,6 +182,13 @@ public partial class AttackComponent : Node
         int damage = AttackDamage;
 
         target.TakeDamage(damage, _owner);
+
+        // 攻击表现：弹道 + 脉冲（干员/敌人通用）
+        if (_owner is Node2D ownerNode && target is Node2D targetNode)
+        {
+            AttackEffects.SpawnTracer(ownerNode, targetNode, new Color(1f, 0.88f, 0.5f));
+            AttackEffects.Pulse(ownerNode, 1f, 1.08f);
+        }
         AttackExecuted?.Invoke(target, damage);
 
         GD.Print($"[AttackComponent] {_owner.EntityName} 攻击 {target.EntityName}，伤害 {damage}");

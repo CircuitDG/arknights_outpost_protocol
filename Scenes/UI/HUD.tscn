@@ -1,9 +1,12 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/Controllers/HUDController.cs" id="1_hud"]
 [ext_resource type="Theme" path="res://Assets/UI/pz_theme.tres" id="2_theme"]
 [ext_resource type="Texture2D" path="res://Assets/UI/cooldown_fill.png" id="3_cooldown"]
 [ext_resource type="Script" path="res://Scripts/UI/Views/InventoryPanel.cs" id="5_inventory"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/MinimapView.cs" id="6_minimap"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/WorldMapView.cs" id="7_worldmap"]
+[ext_resource type="Script" path="res://Scripts/UI/Views/NightFogLayer.cs" id="8_fog"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp"]
 bg_color = Color(0.42, 0.58, 0.32, 0.95)
@@ -90,6 +93,18 @@ corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
 [node name="HUD" type="CanvasLayer"]
+
+[node name="FogLayer" type="CanvasLayer" parent="."]
+layer = 1
+script = ExtResource("8_fog")
+
+[node name="FogRect" type="ColorRect" parent="FogLayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 1)
+mouse_filter = 2
+
+[node name="FogLights" type="Node2D" parent="FogLayer"]
 
 [node name="Root" type="Control" parent="."]
 anchor_right = 1.0
@@ -337,6 +352,94 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("5_inventory")
 visible = false
+
+[node name="MinimapView" type="Control" parent="Root"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 10.0
+offset_top = -95.0
+offset_right = 190.0
+offset_bottom = 95.0
+script = ExtResource("6_minimap")
+
+[node name="BuildPanel" type="Panel" parent="Root"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -212.0
+offset_right = 212.0
+offset_bottom = -10.0
+visible = false
+
+[node name="BuildVBox" type="VBoxContainer" parent="Root/BuildPanel"]
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+theme_override_constants/separation = 6
+
+[node name="BuildTitle" type="Label" parent="Root/BuildPanel/BuildVBox"]
+text = "🏗 防御塔"
+theme_type_variation = &"PZPanelTitle"
+theme_override_font_sizes/font_size = 16
+
+[node name="TowerButton_1" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "弩炮台"
+
+[node name="TowerButton_2" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "减速凝胶塔"
+
+[node name="TowerButton_3" type="Button" parent="Root/BuildPanel/BuildVBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "源石爆裂塔"
+
+[node name="HelpPanel" type="Panel" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -220.0
+offset_right = 380.0
+offset_bottom = 220.0
+visible = false
+
+[node name="HelpVBox" type="VBoxContainer" parent="Root/HelpPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = -28.0
+offset_bottom = -24.0
+theme_override_constants/separation = 12
+
+[node name="HelpTitle" type="Label" parent="Root/HelpPanel/HelpVBox"]
+text = "❓ 行动手册"
+theme_type_variation = &"PZPanelTitle"
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+
+[node name="HelpText" type="Label" parent="Root/HelpPanel/HelpVBox"]
+text = "WASD 移动 | Shift 冲刺 | E 交互 | 滚轮 缩放地图
+左键 点击/框选干员 | 右键 指挥 | F1-F4 释放技能
+建设期：点击左下角防御塔选择，地图左键放置
+数字键 1-9 物品栏 | B 背包 | M 全屏地图 | T 天赋 | H 帮助 | O 设置
+夜晚视野会缩小，靠近干员和防御塔才能看清路面"
+theme_override_colors/font_color = Color(0.84, 0.78, 0.64, 1)
+theme_override_font_sizes/font_size = 17
+horizontal_alignment = 1
+
+[node name="HelpCloseButton" type="Button" parent="Root/HelpPanel/HelpVBox"]
+custom_minimum_size = Vector2(160, 40)
+text = "关闭"
+size_flags_vertical = 8
+
+[node name="WorldMapView" type="Control" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("7_worldmap")
 
 [node name="PhaseNoticePanel" type="Panel" parent="Root"]
 anchor_left = 0.5

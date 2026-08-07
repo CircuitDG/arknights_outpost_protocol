@@ -36,6 +36,19 @@ public partial class HUDController : Node
     private OutpostCore _outpostCore;
     private Button _settingsToggleButton;
     private Control _settingsPanel;
+    private Control _helpPanel;
+    private Button _helpCloseButton;
+
+    // 建设期防御塔选择
+    private Control _buildPanel;
+    private readonly Button[] _towerButtons = new Button[3];
+    private readonly System.Action[] _towerButtonHandlers = new System.Action[3];
+    private int _selectedTowerIndex = -1;
+
+    // 地图
+    private MinimapView _minimap;
+    private WorldMapView _worldMap;
+    private NightFogLayer _fogLayer;
 
     // 干员卡牌（右侧竖排）
     private VBoxContainer _operatorCardContainer;
@@ -114,12 +127,30 @@ public partial class HUDController : Node
         _tooltipReady = GetNodeOrNull<Label>("../Root/TooltipPanel/TooltipVBox/TooltipReadyLabel");
         _settingsToggleButton = GetNodeOrNull<Button>("../Root/SettingsToggleButton");
         _settingsPanel = GetNodeOrNull<Control>("../../UICanvas/SettingsPanel");
+        _helpPanel = GetNodeOrNull<Control>("../Root/HelpPanel");
+        _helpCloseButton = GetNodeOrNull<Button>("../Root/HelpPanel/HelpVBox/HelpCloseButton");
+        _buildPanel = GetNodeOrNull<Control>("../Root/BuildPanel");
+        for (int i = 0; i < 3; i++)
+        {
+            _towerButtons[i] = GetNodeOrNull<Button>($"../Root/BuildPanel/BuildVBox/TowerButton_{i + 1}");
+        }
+        _minimap = GetNodeOrNull<MinimapView>("../Root/MinimapView");
+        _worldMap = GetNodeOrNull<WorldMapView>("../Root/WorldMapView");
+        _fogLayer = GetNodeOrNull<NightFogLayer>("../FogLayer");
 
         FindOutpostCore();
 
         if (_backpackButton != null) _backpackButton.Pressed += ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed += OnInventoryClosed;
         if (_settingsToggleButton != null) _settingsToggleButton.Pressed += ToggleSettings;
+        if (_helpCloseButton != null) _helpCloseButton.Pressed += ToggleHelp;
+        for (int i = 0; i < _towerButtons.Length; i++)
+        {
+            if (_towerButtons[i] == null) continue;
+            int index = i;
+            _towerButtonHandlers[i] = () => OnTowerButtonPressed(index);
+            _towerButtons[i].Pressed += _towerButtonHandlers[i];
+        }
 
         BuildHotbar();
 
@@ -172,6 +203,15 @@ public partial class HUDController : Node
         if (_backpackButton != null) _backpackButton.Pressed -= ToggleInventory;
         if (_inventoryPanel != null) _inventoryPanel.Closed -= OnInventoryClosed;
         if (_settingsToggleButton != null) _settingsToggleButton.Pressed -= ToggleSettings;
+        if (_helpCloseButton != null) _helpCloseButton.Pressed -= ToggleHelp;
+        for (int i = 0; i < _towerButtons.Length; i++)
+        {
+            if (_towerButtons[i] == null) continue;
+            if (_towerButtonHandlers[i] != null)
+            {
+                _towerButtons[i].Pressed -= _towerButtonHandlers[i];
+            }
+        }
 
         HideTooltip();
     }
@@ -195,6 +235,7 @@ public partial class HUDController : Node
             _uiRefreshTimer = 0;
             RefreshOperatorCards();
             RefreshHotbar();
+            UpdateNightFog();
             if (_tooltipPanel != null && _tooltipPanel.Visible && _hoveredCard != null)
             {
                 UpdateTooltip(_hoveredCard);
@@ -558,6 +599,98 @@ public partial class HUDController : Node
         }
     }
 
+    private void ToggleHelp()
+    {
+        if (_helpPanel != null)
+        {
+            _helpPanel.Visible = !_helpPanel.Visible;
+        }
+    }
+
+    private void ToggleWorldMap()
+    {
+        if (_worldMap == null) return;
+        if (_worldMap.Visible)
+        {
+            _worldMap.Close();
+        }
+        else
+        {
+            _worldMap.Open();
+        }
+    }
+
+    private void OnTowerButtonPressed(int index)
+    {
+        if (_towerBuilder == null) return;
+        _selectedTowerIndex = index;
+        RefreshTowerButtons();
+        _towerBuilder.StartBuildMode(index);
+    }
+
+    private void RefreshTowerButtons()
+    {
+        for (int i = 0; i < _towerButtons.Length; i++)
+        {
+            if (_towerButtons[i] == null) continue;
+            _towerButtons[i].Modulate = i == _selectedTowerIndex
+                ? new Color(1f, 0.85f, 0.4f)
+                : Colors.White;
+        }
+    }
+
+    private void UpdateBuildPanel()
+    {
+        bool isBuild = GameManager.Instance?.CurrentState == GameState.Build;
+        if (_buildPanel != null) _buildPanel.Visible = isBuild;
+        if (!isBuild)
+        {
+            _selectedTowerIndex = -1;
+            RefreshTowerButtons();
+        }
+    }
+
+    private void UpdateNightFog()
+    {
+        if (_fogLayer == null) return;
+
+        var gm = GameManager.Instance;
+        float alpha = 0f;
+        if (gm != null)
+        {
+            alpha = gm.CurrentState switch
+            {
+                GameState.Battle => 0.72f,
+                GameState.Build => 0.38f,
+                GameState.Rest => 0.22f,
+                _ => 0f,
+            };
+        }
+
+        var lights = new List<(Vector2 Position, float Radius)>();
+        if (alpha > 0f)
+        {
+            foreach (var node in GetTree().GetNodesInGroup("doctor"))
+            {
+                if (node is Node2D d) lights.Add((d.GlobalPosition, 140f));
+            }
+            foreach (var node in GetTree().GetNodesInGroup("operators"))
+            {
+                if (node is Node2D op) lights.Add((op.GlobalPosition, 100f));
+            }
+            foreach (var node in GetTree().GetNodesInGroup("towers"))
+            {
+                if (node is TowerBase tower) lights.Add((tower.GlobalPosition, tower.CurrentRange));
+            }
+            foreach (var node in GetTree().GetNodesInGroup("outpost_core"))
+            {
+                if (node is Node2D core) lights.Add((core.GlobalPosition, 160f));
+            }
+        }
+
+        _fogLayer.UpdateFog(alpha, lights);
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         if (@event is InputEventKey keyEvt && keyEvt.Pressed)
@@ -584,9 +717,32 @@ public partial class HUDController : Node
                 return;
             }
 
+            // 全屏地图打开时 M / Esc 关闭
+            if (_worldMap != null && _worldMap.Visible)
+            {
+                if (keyEvt.Keycode == Key.M || keyEvt.Keycode == Key.Escape)
+                {
+                    _worldMap.Close();
+                    GetViewport().SetInputAsHandled();
+                }
+                return;
+            }
+
             if (keyEvt.IsActionPressed("talent"))
             {
                 GetNodeOrNull<TalentTreeController>("../../UICanvas/TalentTree")?.ShowTalentTree();
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+            if (keyEvt.Keycode == Key.H)
+            {
+                ToggleHelp();
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+            if (keyEvt.Keycode == Key.M)
+            {
+                ToggleWorldMap();
                 GetViewport().SetInputAsHandled();
                 return;
             }
@@ -612,15 +768,15 @@ public partial class HUDController : Node
                 switch (buildKey.Keycode)
                 {
                     case Key.Key1:
-                        _towerBuilder.StartBuildMode(0);
+                        OnTowerButtonPressed(0);
                         GetViewport().SetInputAsHandled();
                         return;
                     case Key.Key2:
-                        _towerBuilder.StartBuildMode(1);
+                        OnTowerButtonPressed(1);
                         GetViewport().SetInputAsHandled();
                         return;
                     case Key.Key3:
-                        _towerBuilder.StartBuildMode(2);
+                        OnTowerButtonPressed(2);
                         GetViewport().SetInputAsHandled();
                         return;
                     case Key.Escape:
@@ -655,20 +811,6 @@ public partial class HUDController : Node
             }
         }
 
-        // 鼠标滚轮循环切换
-        if (@event is InputEventMouseButton wheel && wheel.Pressed)
-        {
-            if (wheel.ButtonIndex == MouseButton.WheelUp)
-            {
-                CycleHotbar(-1);
-                GetViewport().SetInputAsHandled();
-            }
-            else if (wheel.ButtonIndex == MouseButton.WheelDown)
-            {
-                CycleHotbar(1);
-                GetViewport().SetInputAsHandled();
-            }
-        }
     }
 
     // ============================================================
@@ -703,6 +845,7 @@ public partial class HUDController : Node
     {
         _phaseLabel.Text = GetPhaseText(newState);
         ShowPhaseNotice(newState);
+        UpdateBuildPanel();
 
         if (newState != GameState.Build && _towerBuilder != null && _towerBuilder.IsBuildingMode)
         {

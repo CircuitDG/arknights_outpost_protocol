@@ -4,6 +4,7 @@ using OutpostProtocol.Gameplay.Building;
 using OutpostProtocol.Gameplay.Entity;
 using OutpostProtocol.Gameplay.Entity.Components;
 using OutpostProtocol.Gameplay.Inventory;
+using OutpostProtocol.Managers;
 using OutpostProtocol.UI.Controllers;
 
 namespace OutpostProtocol.Gameplay.Character.Enemy;
@@ -70,6 +71,21 @@ public partial class Enemy : BaseEntity
         EventBus.Instance.GameStateChanged += OnGameStateChanged;
 
         UpdateSprite();
+
+        // 加入敌人组（小地图/统计使用）
+        AddToGroup("enemies");
+
+        // 敌人难度随天数增长
+        var gameManager = GameManager.Instance;
+        if (gameManager != null && gameManager.DayCount > 1)
+        {
+            float multiplier = 1f + (gameManager.DayCount - 1) * 0.12f;
+            if (Health != null) Health.MaxHealth = (int)(Health.MaxHealth * multiplier);
+            if (Attack != null) Attack.AttackDamage = (int)(Attack.AttackDamage * multiplier);
+            ExpReward += (gameManager.DayCount - 1) * 2;
+            ResourceReward += gameManager.DayCount - 1;
+            GD.Print($"[{EntityName}] 难度缩放 x{multiplier:F2}（Day {gameManager.DayCount}）");
+        }
 
         GD.Print($"[{EntityName}] 敌人初始化完成 — HP:{Health?.CurrentHealth}/{Health?.MaxHealth}");
     }

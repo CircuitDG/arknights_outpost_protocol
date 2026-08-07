@@ -134,6 +134,12 @@ public partial class TowerBuilder : Node
             AddChild(_previewTower);
         }
 
+        // 建造预览时显示射程，方便摆放
+        if (_previewTower?.RangeIndicator != null)
+        {
+            _previewTower.RangeIndicator.Visible = true;
+        }
+
         GD.Print($"[TowerBuilder] 进入建造模式: {_previewTower.Data?.Name ?? "Unknown"}");
         EventBus.Instance.EmitLogMessage("进入建造模式，点击放置塔", "INFO");
     }

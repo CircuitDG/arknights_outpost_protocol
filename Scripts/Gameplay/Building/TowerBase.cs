@@ -2,6 +2,7 @@ using Godot;
 using OutpostProtocol.Core.EventBus;
 using OutpostProtocol.Data;
 using OutpostProtocol.Gameplay.Entity;
+using OutpostProtocol.Gameplay.Effects;
 using OutpostProtocol.Gameplay.Inventory;
 using OutpostProtocol.Managers;
 using OutpostProtocol.UI.Controllers;
@@ -94,6 +95,9 @@ public partial class TowerBase : Node2D
         {
             _detectionArea.BodyEntered += OnBodyEntered;
             _detectionArea.BodyExited += OnBodyExited;
+            _detectionArea.InputPickable = true;
+            _detectionArea.MouseEntered += OnRangeMouseEntered;
+            _detectionArea.MouseExited += OnRangeMouseExited;
         }
 
         if (_attackTimerNode != null)
@@ -105,6 +109,13 @@ public partial class TowerBase : Node2D
         _currentDurability = MaxDurability;
         UpdateRangeIndicator();
         UpdateVisuals();
+        AddToGroup("towers");
+
+        // 射程指示默认隐藏，鼠标悬停时显示
+        if (RangeIndicator != null)
+        {
+            RangeIndicator.Visible = false;
+        }
 
         _isBuilt = true;
         GD.Print($"[{_data?.Name ?? "Unknown"}] 建造完成 — Lv.{CurrentLevel}, 伤害:{CurrentDamage}, 射程:{CurrentRange}");
@@ -116,6 +127,8 @@ public partial class TowerBase : Node2D
         {
             _detectionArea.BodyEntered -= OnBodyEntered;
             _detectionArea.BodyExited -= OnBodyExited;
+            _detectionArea.MouseEntered -= OnRangeMouseEntered;
+            _detectionArea.MouseExited -= OnRangeMouseExited;
         }
 
         if (_attackTimerNode != null)
@@ -346,6 +359,10 @@ public partial class TowerBase : Node2D
         // 执行攻击（来源是塔，Node2D）
         _currentTarget.TakeDamage(damage, this);
 
+        // 攻击表现：弹道 + 脉冲
+        AttackEffects.SpawnTracer(this, _currentTarget, new Color(1f, 0.82f, 0.38f));
+        AttackEffects.Pulse(this, 1f, 1.12f);
+
         // 创建弹道效果
         SpawnProjectile(_currentTarget.GlobalPosition);
 
@@ -367,6 +384,16 @@ public partial class TowerBase : Node2D
     private void OnAttackTimerTimeout()
     {
         // 使用 _Process 驱动的攻击循环，此 Timer 作为扩展预留
+    }
+
+    private void OnRangeMouseEntered()
+    {
+        if (RangeIndicator != null) RangeIndicator.Visible = true;
+    }
+
+    private void OnRangeMouseExited()
+    {
+        if (RangeIndicator != null) RangeIndicator.Visible = false;
     }
 
     // ============================================================
