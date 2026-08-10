@@ -25,10 +25,10 @@ DataManager="*res://Scripts/Managers/DataManager.cs"
 GridManager="*res://Scripts/Core/Grid/GridManager.cs"
 SaveManager="*res://Scripts/Managers/SaveManager.cs"
 SettingsManager="*res://Scripts/Managers/SettingsManager.cs"
-_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 BuffManager="*res://Scripts/Managers/BuffManager.cs"
 DailyStatsManager="*res://Scripts/Managers/DailyStatsManager.cs"
 AudioManager="*res://Scripts/Managers/AudioManager.cs"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]
 
@@ -90,3 +90,4 @@ interact={
 
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true
